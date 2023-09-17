@@ -33,6 +33,7 @@ void setup()
 
   tft.init();
   tft.setRotation(3);
+  tft.fillScreen(TFT_BLACK);
   tft.initDMA();
   tft.fillScreen(TFT_BLACK);
   tft.setTextFont(2);
