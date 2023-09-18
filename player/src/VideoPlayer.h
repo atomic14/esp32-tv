@@ -2,7 +2,7 @@
 #include "JPEGDEC.h"
 
 class TFT_eSPI;
-class I2SOutput;
+class AudioOutput;
 
 enum class VideoPlayerState {
   STOPPED,
@@ -38,7 +38,7 @@ class VideoPlayer {
     // audio playing
     const char *mAudioURL = NULL;
     int mCurrentAudioSample = 0;
-    I2SOutput *mAudioOutput = NULL;
+    AudioOutput *mAudioOutput = NULL;
 
     friend void _frameDownloaderTask(void *param);
     friend void _framePlayerTask(void *param);
@@ -51,7 +51,7 @@ class VideoPlayer {
     friend int _doDraw(JPEGDRAW *pDraw);
 
   public:
-    VideoPlayer(const char *frameURL, const char *audioURL, TFT_eSPI &display, I2SOutput *audioOutput);
+    VideoPlayer(const char *frameURL, const char *audioURL, TFT_eSPI &display, AudioOutput *audioOutput);
     void setChannel(int channelIndex, int channelLength);
     void start();
     void play();

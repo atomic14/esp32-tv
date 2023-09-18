@@ -3,16 +3,19 @@
 #include <TFT_eSPI.h>
 #include "RemoteInput.h"
 #include "VideoPlayer.h"
-#include "I2SOutput.h"
+#include "audio_output/I2SOutput.h"
+#include "audio_output/DACOutput.h"
 #include "ChannelData.h"
 
 const char *FRAME_URL = "http://192.168.1.229:8123/frame";
 const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
 const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
 
+#ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
+#endif
 VideoPlayer *videoPlayer = NULL;
-I2SOutput *audioOutput = NULL;
+AudioOutput *audioOutput = NULL;
 ChannelData *channelData = NULL;
 TFT_eSPI tft = TFT_eSPI();
 
@@ -34,33 +37,53 @@ void setup()
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
-  tft.initDMA();
+  // tft.initDMA();
   tft.fillScreen(TFT_BLACK);
   tft.setTextFont(2);
   tft.setTextSize(2);
 
-
+#ifdef HAS_IR_REMOTE
   remoteInput = new RemoteInput(IR_RECV_PIN, IR_RECV_PWR, IR_RECV_GND, IR_RECV_IND);
   remoteInput->start();
+#endif
 
+#ifdef USE_DAC_AUDIO
+  audioOutput = new DACOutput(I2S_NUM_0);
+  audioOutput->start(16000);
+#else
   // i2s speaker pins
   i2s_pin_config_t i2s_speaker_pins = {
       .bck_io_num = I2S_SPEAKER_SERIAL_CLOCK,
       .ws_io_num = I2S_SPEAKER_LEFT_RIGHT_CLOCK,
       .data_out_num = I2S_SPEAKER_SERIAL_DATA,
       .data_in_num = I2S_PIN_NO_CHANGE};
+
   audioOutput = new I2SOutput(I2S_NUM_1, i2s_speaker_pins);
   audioOutput->start(16000);
-
+#endif
   videoPlayer = new VideoPlayer(FRAME_URL, AUDIO_URL, tft, audioOutput);
   videoPlayer->start();
 
   channelData = new ChannelData(CHANNEL_INFO_URL);
+
+#ifndef HAS_IR_REMOTE
+  tft.setCursor(20, 20);
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
+  tft.println("TUNING...");
+  // get the channel info
+  while(!channelData->fetchChannelData()) {
+    Serial.println("Failed to fetch channel data");
+    delay(1000);
+  }
+  videoPlayer->setChannel(0, channelData->getChannelLength(0));
+  videoPlayer->play();
+#endif
 }
 
 int channel = 0;
 void loop()
 {
+#ifdef HAS_IR_REMOTE
   RemoteCommands command = remoteInput->getLatestCommand();
   if (command != RemoteCommands::UNKNOWN)
   {
@@ -111,5 +134,6 @@ void loop()
     delay(100);
     remoteInput->getLatestCommand();
   }
+#endif
   delay(100);
 }

@@ -3,7 +3,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "VideoPlayer.h"
-#include "I2SOutput.h"
+#include "audio_output/AudioOutput.h"
 
 void _frameDownloaderTask(void *param)
 {
@@ -23,7 +23,7 @@ void _audioLoopTask(void *param)
   player->audioLoopTask();
 }
 
-VideoPlayer::VideoPlayer(const char *frameURL, const char *audioURL, TFT_eSPI &display, I2SOutput *audioOutput) : mFrameURL(frameURL), mAudioURL(audioURL), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
+VideoPlayer::VideoPlayer(const char *frameURL, const char *audioURL, TFT_eSPI &display, AudioOutput *audioOutput) : mFrameURL(frameURL), mAudioURL(audioURL), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
 {
 }
 
@@ -201,7 +201,7 @@ int _doDraw(JPEGDRAW *pDraw)
   TFT_eSPI &tft = player->mDisplay;
   tft.dmaWait();
   tft.setAddrWindow(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
-  tft.pushPixelsDMA(dmaBuffer[dmaBufferIndex], numPixels);
+  tft.pushPixels(dmaBuffer[dmaBufferIndex], numPixels);
   dmaBufferIndex = (dmaBufferIndex + 1) % 2;
   return 1;
 }
@@ -278,6 +278,7 @@ void VideoPlayer::framePlayerTask()
     // make sure the downloader gets the next frame
     mFrameReady = false;
     // do the actual drawing
+    mDisplay.startWrite();
     if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw))
     {
       mJpeg.setUserPointer(this);
@@ -290,6 +291,7 @@ void VideoPlayer::framePlayerTask()
       mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
       mDisplay.printf("%d", mChannelIndex);
     }
+    mDisplay.endWrite();
   }
 }
 

@@ -3,8 +3,10 @@ from video_server.video_preprocessor import process_videos, get_video_data
 
 app = Flask(__name__)
 
+FRAME_SIZE = (280, 240)
+
 # process the video files
-video_data = process_videos("movies")
+video_data = process_videos("movies", FRAME_SIZE)
 
 @app.route('/channel_info')
 def get_channel_lengths():
