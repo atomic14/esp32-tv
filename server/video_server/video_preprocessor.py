@@ -38,6 +38,8 @@ def extract_audio(video_file, sample_rate=16000):
         resampled_audio = resample(
             audio_data, int(len(audio_data) * 16000 / sample_rate)
         )
+        # normalize the audio
+        resampled_audio = resampled_audio / np.max(np.abs(resampled_audio))
         # Convert to signed 8-bit
         audio_8bit = np.int8(resampled_audio * 127)
         # Create audio buffer
@@ -118,6 +120,8 @@ def process_videos(
     files = os.listdir(video_path)
     # filter out non-video files
     files = [f for f in files if f.endswith(".mp4")]
+    # fort the files alphabetically
+    files.sort()
     # process each video file
     video_data = []
     for file in tqdm(files, desc="Processing videos"):
