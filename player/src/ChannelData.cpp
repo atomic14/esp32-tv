@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <HttpClient.h>
+#include <HTTPClient.h>
 #include "ChannelData.h"
 
 ChannelData::ChannelData(const char *channelInfoURL): mChannelInfoURL(channelInfoURL) {
