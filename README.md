@@ -1,3 +1,5 @@
+[![Build Firmware](https://github.com/atomic14/esp32-tv/actions/workflows/build_firmware.yml/badge.svg)](https://github.com/atomic14/esp32-tv/actions/workflows/build_firmware.yml)
+
 # ESP32 Video Streaming!
 
 Yes - it actually works! Streaming video with audio to an ESP32!
