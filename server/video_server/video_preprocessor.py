@@ -110,6 +110,10 @@ def process_video_file(
         audio, frames = get_video_data(video_file)
     return audio, frames
 
+VALID_MOVIE_EXTENSTIONS = [".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm"]
+def is_movie_file(file):
+    return os.path.splitext(file)[1] in VALID_MOVIE_EXTENSTIONS
+
 
 def process_videos(
     video_path, target_size=(280, 240), sample_rate=16000, frame_rate=15
@@ -119,7 +123,7 @@ def process_videos(
     # get the list of files in the video path
     files = os.listdir(video_path)
     # filter out non-video files
-    files = [f for f in files if f.endswith(".mp4")]
+    files = [f for f in files if is_movie_file(f)]
     # fort the files alphabetically
     files.sort()
     # process each video file

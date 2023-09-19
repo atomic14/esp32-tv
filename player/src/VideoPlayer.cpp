@@ -49,7 +49,7 @@ void VideoPlayer::start()
       1,
       NULL,
       1);
-  xTaskCreatePinnedToCore(_audioLoopTask, "audio_loop", 10000, this, 1, NULL, 0);
+  xTaskCreatePinnedToCore(_audioLoopTask, "audio_loop", 10000, this, 1, NULL, 1);
 }
 
 void VideoPlayer::setChannel(int channelIndex, int channelLength)
@@ -129,7 +129,7 @@ void VideoPlayer::frameDownloaderTask()
     if (mFrameReady)
     {
       // we already have a frame ready, so just wait
-      vTaskDelay(100 / portTICK_PERIOD_MS);
+      vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
     }
     // work out the video time from a combination of the currentAudioSample and the elapsed time
@@ -201,7 +201,7 @@ int _doDraw(JPEGDRAW *pDraw)
   TFT_eSPI &tft = player->mDisplay;
   tft.dmaWait();
   tft.setAddrWindow(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
-  tft.pushPixels(dmaBuffer[dmaBufferIndex], numPixels);
+  tft.pushPixelsDMA(dmaBuffer[dmaBufferIndex], numPixels);
   dmaBufferIndex = (dmaBufferIndex + 1) % 2;
   return 1;
 }
@@ -262,7 +262,7 @@ void VideoPlayer::framePlayerTask()
     if (!mFrameReady)
     {
       xSemaphoreGive(mCurrentFrameMutex);
-      vTaskDelay(100 / portTICK_PERIOD_MS);
+      vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
     }
     // grab a copy of the current frame buffer

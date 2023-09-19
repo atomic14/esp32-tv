@@ -52,9 +52,5 @@ int ChannelData::getChannelCount() {
 
 int ChannelData::getChannelLength(int channelIndex)
 {
-  if (channelIndex < 0 || channelIndex >= mChannelCount)
-  {
-    return 0;
-  }
-  return mChannelLengths[channelIndex];
+  return mChannelLengths[channelIndex % mChannelCount];
 }

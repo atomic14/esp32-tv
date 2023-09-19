@@ -24,6 +24,8 @@ pip install -r requirements.txt
 
 Place videos in the `movies` directory. The videos should be in the mp4 format and should be fairly short (around 2-3 minutes maximum).
 
+If you change any parameters for the video (e.g. the frame size), just detele the `cache` directory and it will be regenerated when you start the server.
+
 # Running
 
 To run the application:

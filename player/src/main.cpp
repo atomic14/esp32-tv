@@ -7,6 +7,8 @@
 #include "audio_output/DACOutput.h"
 #include "ChannelData.h"
 
+const char *WIFI_SSID = "SSID";
+const char *WIFI_PASSWORD = "PASSWORD";
 const char *FRAME_URL = "http://192.168.1.229:8123/frame";
 const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
 const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
@@ -23,13 +25,14 @@ void setup()
 {
   Serial.begin(115200);
   // connect to Wifi
-  WiFi.begin("CMGResearch", "02087552867");
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(500);
     Serial.print(".");
   }
   WiFi.setSleep(false);
+  WiFi.setTxPower(WIFI_POWER_19_5dBm);
   Serial.println("");
   // disable WiFi power saving for speed
   Serial.println("WiFi connected");
@@ -37,7 +40,7 @@ void setup()
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
-  // tft.initDMA();
+  tft.initDMA();
   tft.fillScreen(TFT_BLACK);
   tft.setTextFont(2);
   tft.setTextSize(2);
@@ -67,6 +70,7 @@ void setup()
   channelData = new ChannelData(CHANNEL_INFO_URL);
 
 #ifndef HAS_IR_REMOTE
+  // no remote so we just play the first channel
   tft.setCursor(20, 20);
   tft.setTextColor(TFT_GREEN, TFT_BLACK);
   tft.println("TUNING...");
@@ -75,6 +79,7 @@ void setup()
     Serial.println("Failed to fetch channel data");
     delay(1000);
   }
+  // default to first channel
   videoPlayer->setChannel(0, channelData->getChannelLength(0));
   videoPlayer->play();
 #endif
