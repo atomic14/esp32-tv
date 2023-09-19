@@ -8,4 +8,4 @@ You'll also need some way of getting sound out. I recommend the MAX98357A breako
 
 The code should work with pretty much any ESP32 board, but I've only tested it on a few.
 
-There is currently a bug in the I2S code when using DAC for audio output - I'm not sure when/if this will be fixed. It's in the Arduino ESP32 codebase so it's not something I can fix myself.
+There is currently a bug in the I2S code when using DAC for audio output - you'll need to use an older version of the Arduino ESP32 Core - check the Cheap Yellow Display settings in `platformio.ini` for the correct version.
