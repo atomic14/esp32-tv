@@ -108,6 +108,8 @@ void VideoPlayer::playStatic()
 
 void VideoPlayer::frameDownloaderTask()
 {
+  HTTPClient http;
+  http.setReuse(true);
   char urlBuffer[200];
   uint8_t *downloadBuffer = NULL;
   int downloadBufferLength = 0;
@@ -137,7 +139,6 @@ void VideoPlayer::frameDownloaderTask()
     int videoTime = mAudioTimeMs + elapsedTime;
     if (WiFi.status() == WL_CONNECTED)
     {
-      HTTPClient http;
       sprintf(urlBuffer, "%s/%d/%d", mFrameURL, mChannelIndex, videoTime);
       http.begin(urlBuffer);
       int httpCode = http.GET();
@@ -175,7 +176,7 @@ void VideoPlayer::frameDownloaderTask()
       else
       {
         Serial.printf("HTTP error: %d\n", httpCode);
-        delay(1000);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
       }
     }
     else
@@ -338,7 +339,7 @@ void VideoPlayer::audioLoopTask()
       else
       {
         Serial.printf("HTTP error: %d\n", httpCode);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
       }
     }
     else
