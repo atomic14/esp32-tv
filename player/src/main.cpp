@@ -15,7 +15,14 @@ const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
 
 #ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
+#else
+#warning "No Remote Input - Will default to playing channel 0"
 #endif
+
+#ifndef USE_DMA
+#warning "No DMA - Drawing may be slower"
+#endif
+
 VideoPlayer *videoPlayer = NULL;
 AudioOutput *audioOutput = NULL;
 ChannelData *channelData = NULL;
@@ -40,7 +47,9 @@ void setup()
   tft.init();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
+  #ifdef USE_DMA
   tft.initDMA();
+  #endif
   tft.fillScreen(TFT_BLACK);
   tft.setTextFont(2);
   tft.setTextSize(2);

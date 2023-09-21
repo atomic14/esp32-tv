@@ -16,6 +16,6 @@ public:
     {
         // DAC needs unsigned 16 bit samples
         // make them slightly quieter or they are really loud
-        return sample/4 + 32768;
+        return sample + 32768;
     }
 };

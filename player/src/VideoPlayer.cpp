@@ -200,9 +200,15 @@ int _doDraw(JPEGDRAW *pDraw)
   }
   memcpy(dmaBuffer[dmaBufferIndex], pDraw->pPixels, numPixels * 2);
   TFT_eSPI &tft = player->mDisplay;
+  #ifdef USE_DMA
   tft.dmaWait();
+  #endif
   tft.setAddrWindow(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
+  #ifdef USE_DMA
   tft.pushPixelsDMA(dmaBuffer[dmaBufferIndex], numPixels);
+  #else
+  tft.pushPixels(dmaBuffer[dmaBufferIndex], numPixels);
+  #endif
   dmaBufferIndex = (dmaBufferIndex + 1) % 2;
   return 1;
 }
@@ -250,10 +256,15 @@ void VideoPlayer::framePlayerTask()
           int grey = xorshift16() >> 8;
           staticBuffer[p] = mDisplay.color565(grey, grey, grey);
         }
-        // mDisplay.dmaWait();
+        #ifdef USE_DMA
         mDisplay.dmaWait();
+        #endif
         mDisplay.setAddrWindow(0, i * height, width, height);
+        #ifdef USE_DMA
         mDisplay.pushPixelsDMA(staticBuffer, width * height);
+        #else
+        mDisplay.pushPixels(staticBuffer, width * height);
+        #endif
       }
       vTaskDelay(50 / portTICK_PERIOD_MS);
       continue;
