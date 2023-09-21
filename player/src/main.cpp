@@ -6,6 +6,8 @@
 #include "audio_output/I2SOutput.h"
 #include "audio_output/DACOutput.h"
 #include "ChannelData.h"
+#include "AudioSource/NetworkAudioSource.h"
+#include "VideoSource/NetworkVideoSource.h"
 
 const char *WIFI_SSID = "SSID";
 const char *WIFI_PASSWORD = "PASSWORD";
@@ -73,7 +75,12 @@ void setup()
   audioOutput = new I2SOutput(I2S_NUM_1, i2s_speaker_pins);
   audioOutput->start(16000);
 #endif
-  videoPlayer = new VideoPlayer(FRAME_URL, AUDIO_URL, tft, audioOutput);
+  videoPlayer = new VideoPlayer(
+    new NetworkVideoSource(FRAME_URL),
+    new NetworkAudioSource(AUDIO_URL),
+    tft,
+    audioOutput
+  );
   videoPlayer->start();
 
   channelData = new ChannelData(CHANNEL_INFO_URL);

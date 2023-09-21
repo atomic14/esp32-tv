@@ -4,42 +4,30 @@
 #include <HTTPClient.h>
 #include "VideoPlayer.h"
 #include "audio_output/AudioOutput.h"
+#include "VideoSource/VideoSource.h"
+#include "AudioSource/AudioSource.h"
 
-void _frameDownloaderTask(void *param)
-{
-  VideoPlayer *player = (VideoPlayer *)param;
-  player->frameDownloaderTask();
-}
-
-void _framePlayerTask(void *param)
+void VideoPlayer::_framePlayerTask(void *param)
 {
   VideoPlayer *player = (VideoPlayer *)param;
   player->framePlayerTask();
 }
 
-void _audioLoopTask(void *param)
+void VideoPlayer::_audioPlayerTask(void *param)
 {
   VideoPlayer *player = (VideoPlayer *)param;
-  player->audioLoopTask();
+  player->audioPlayerTask();
 }
 
-VideoPlayer::VideoPlayer(const char *frameURL, const char *audioURL, TFT_eSPI &display, AudioOutput *audioOutput) : mFrameURL(frameURL), mAudioURL(audioURL), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
+VideoPlayer::VideoPlayer(VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput)
+: mVideoSource(videoSource), mAudioSource(audioSource), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
 {
 }
 
 void VideoPlayer::start()
 {
-  // create a mutex to control access to the JPEG buffer
-  mCurrentFrameMutex = xSemaphoreCreateMutex();
-  // launch the frame downloader task
-  xTaskCreatePinnedToCore(
-      _frameDownloaderTask,
-      "Frame Downloader",
-      10000,
-      this,
-      1,
-      NULL,
-      0);
+  mVideoSource->start();
+  mAudioSource->start();
   // launch the frame player task
   xTaskCreatePinnedToCore(
       _framePlayerTask,
@@ -49,18 +37,16 @@ void VideoPlayer::start()
       1,
       NULL,
       1);
-  xTaskCreatePinnedToCore(_audioLoopTask, "audio_loop", 10000, this, 1, NULL, 1);
+  xTaskCreatePinnedToCore(_audioPlayerTask, "audio_loop", 10000, this, 1, NULL, 1);
 }
 
-void VideoPlayer::setChannel(int channelIndex, int channelLength)
+void VideoPlayer::setChannel(int channel, int channelLength)
 {
-  mLastAudioTimeUpdateMs = millis();
-  mLastAudioTimeUpdateMs = millis();
-  mFrameReady = false;
-  mAudioTimeMs = 0;
+  mVideoSource->setChannel(channel);
   mCurrentAudioSample = 0;
-  mChannelIndex = channelIndex;
+  mChannel = channel;
   mChannelLength = channelLength;
+  mChannelVisible = millis();
 }
 
 void VideoPlayer::play()
@@ -70,8 +56,7 @@ void VideoPlayer::play()
     return;
   }
   mState = VideoPlayerState::PLAYING;
-  mLastAudioTimeUpdateMs = millis();
-  mAudioTimeMs = 0;
+  mVideoSource->setState(VideoPlayerState::PLAYING);
   mCurrentAudioSample = 0;
 }
 
@@ -82,8 +67,7 @@ void VideoPlayer::stop()
     return;
   }
   mState = VideoPlayerState::STOPPED;
-  mLastAudioTimeUpdateMs = millis();
-  mAudioTimeMs = 0;
+  mVideoSource->setState(VideoPlayerState::STOPPED);
   mCurrentAudioSample = 0;
   mDisplay.fillScreen(TFT_BLACK);
 }
@@ -95,6 +79,7 @@ void VideoPlayer::pause()
     return;
   }
   mState = VideoPlayerState::PAUSED;
+  mVideoSource->setState(VideoPlayerState::PAUSED);
 }
 
 void VideoPlayer::playStatic()
@@ -104,88 +89,9 @@ void VideoPlayer::playStatic()
     return;
   }
   mState = VideoPlayerState::STATIC;
+  mVideoSource->setState(VideoPlayerState::STATIC);
 }
 
-void VideoPlayer::frameDownloaderTask()
-{
-  HTTPClient http;
-  http.setReuse(true);
-  char urlBuffer[200];
-  uint8_t *downloadBuffer = NULL;
-  int downloadBufferLength = 0;
-  while (true)
-  {
-    if (mState == VideoPlayerState::STOPPED || mState == VideoPlayerState::STATIC)
-    {
-      vTaskDelay(100 / portTICK_PERIOD_MS);
-      continue;
-    }
-    if (mState == VideoPlayerState::PAUSED)
-    {
-      // video time is not passing, so keep moving the start time forward so it is now
-      mLastAudioTimeUpdateMs = millis();
-      vTaskDelay(100 / portTICK_PERIOD_MS);
-      continue;
-    }
-    // do we need to download a frame?
-    if (mFrameReady)
-    {
-      // we already have a frame ready, so just wait
-      vTaskDelay(10 / portTICK_PERIOD_MS);
-      continue;
-    }
-    // work out the video time from a combination of the currentAudioSample and the elapsed time
-    int elapsedTime = millis() - mLastAudioTimeUpdateMs;
-    int videoTime = mAudioTimeMs + elapsedTime;
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      sprintf(urlBuffer, "%s/%d/%d", mFrameURL, mChannelIndex, videoTime);
-      http.begin(urlBuffer);
-      int httpCode = http.GET();
-
-      if (httpCode == HTTP_CODE_OK)
-      {
-        // read the image into our local buffer
-        int jpegLength = http.getSize();
-        if (jpegLength > downloadBufferLength)
-        {
-          downloadBuffer = (uint8_t *)realloc(downloadBuffer, jpegLength);
-          downloadBufferLength = jpegLength;
-        }
-        http.getStreamPtr()->readBytes(downloadBuffer, jpegLength);
-        // lock the image buffer
-        xSemaphoreTake(mCurrentFrameMutex, portMAX_DELAY);
-        // reallocate the image buffer if necessary
-        if (jpegLength > mCurrentFrameBufferLength)
-        {
-          mCurrentFrameBuffer = (uint8_t *)realloc(mCurrentFrameBuffer, jpegLength);
-          mCurrentFrameBufferLength = jpegLength;
-        }
-        // copy the image buffer
-        memcpy(mCurrentFrameBuffer, downloadBuffer, jpegLength);
-        mCurrentFrameLength = jpegLength;
-        // don't set this flag if we aren't playing otherwise we might trigger a draw
-        if (mState == VideoPlayerState::PLAYING)
-        {
-          mFrameReady = true;
-        }
-        // unlock the image buffer
-        xSemaphoreGive(mCurrentFrameMutex);
-        // Serial.printf("Read %d bytes in %d ms\n", download_image_length, millis() - start_download_time);
-      }
-      else
-      {
-        Serial.printf("HTTP error: %d\n", httpCode);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-      }
-    }
-    else
-    {
-      Serial.println("Not connected to WiFi");
-      delay(1000);
-    }
-  }
-}
 
 // double buffer the dma drawing otherwise we get corruption
 uint16_t *dmaBuffer[2] = {NULL, NULL};
@@ -229,8 +135,8 @@ void VideoPlayer::framePlayerTask()
 {
   uint16_t *staticBuffer = NULL;
   uint8_t *jpegBuffer = NULL;
-  int jpegBufferLength = 0;
-  int jpegLength = 0;
+  size_t jpegBufferLength = 0;
+  size_t jpegLength = 0;
   while (true)
   {
     if (mState == VideoPlayerState::STOPPED || mState == VideoPlayerState::PAUSED)
@@ -269,27 +175,13 @@ void VideoPlayer::framePlayerTask()
       vTaskDelay(50 / portTICK_PERIOD_MS);
       continue;
     }
-    // lock the current frame buffer
-    xSemaphoreTake(mCurrentFrameMutex, portMAX_DELAY);
-    if (!mFrameReady)
+    // get the next frame
+    if (!mVideoSource->getVideoFrame(&jpegBuffer, jpegBufferLength, jpegLength))
     {
-      xSemaphoreGive(mCurrentFrameMutex);
+      // no frame ready yet
       vTaskDelay(10 / portTICK_PERIOD_MS);
       continue;
     }
-    // grab a copy of the current frame buffer
-    if (mCurrentFrameBufferLength > jpegBufferLength)
-    {
-      jpegBuffer = (uint8_t *)realloc(jpegBuffer, mCurrentFrameBufferLength);
-      jpegBufferLength = mCurrentFrameBufferLength;
-    }
-    memcpy(jpegBuffer, mCurrentFrameBuffer, mCurrentFrameLength);
-    jpegLength = mCurrentFrameLength;
-    // unlock the frame buffer so the downloader can carry on
-    xSemaphoreGive(mCurrentFrameMutex);
-    // make sure the downloader gets the next frame
-    mFrameReady = false;
-    // do the actual drawing
     mDisplay.startWrite();
     if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw))
     {
@@ -298,18 +190,18 @@ void VideoPlayer::framePlayerTask()
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
-    if (mAudioTimeMs < 2000) {
+    // show channel indicator 
+    if (millis() - mChannelVisible < 2000) {
       mDisplay.setCursor(20, 20);
       mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
-      mDisplay.printf("%d", mChannelIndex);
+      mDisplay.printf("%d", mChannel);
     }
     mDisplay.endWrite();
   }
 }
 
-void VideoPlayer::audioLoopTask()
+void VideoPlayer::audioPlayerTask()
 {
-  char urlBuffer[200];
   int8_t *audioData = (int8_t *)malloc(16000);
   while (true)
   {
@@ -319,44 +211,25 @@ void VideoPlayer::audioLoopTask()
       vTaskDelay(100 / portTICK_PERIOD_MS);
       continue;
     }
-    // download the audio data
-    if (WiFi.status() == WL_CONNECTED)
-    {
-      HTTPClient http;
-      sprintf(urlBuffer, "%s/%d/%d/16000", mAudioURL, mChannelIndex, mCurrentAudioSample);
-      http.begin(urlBuffer);
-      int httpCode = http.GET();
-      if (httpCode == HTTP_CODE_OK)
-      {
-        // read the audio data into the buffer
-        int audioLength = http.getSize();
-        http.getStreamPtr()->readBytes((uint8_t *)audioData, audioLength);
-        // play the audio
-        for(int i=0; i<audioLength; i+=1000) {
-          mAudioOutput->write(audioData + i, min(1000, audioLength - i));
-          mCurrentAudioSample += min(1000, audioLength - i);
-          mLastAudioTimeUpdateMs = millis();
-          if (mCurrentAudioSample > mChannelLength || mState != VideoPlayerState::PLAYING)
-          {
-            mCurrentAudioSample = 0;
-            mLastAudioTimeUpdateMs = millis();
-            mAudioTimeMs = 1000 * mCurrentAudioSample / 16000;
-            break;
-          }
-          mLastAudioTimeUpdateMs = millis();
-          mAudioTimeMs = 1000 * mCurrentAudioSample / 16000;
+    // get audio data to play
+    int audioLength = mAudioSource->getAudioSamples(audioData, 16000, mChannel, mCurrentAudioSample);
+    if (audioLength > 0) {
+      // play the audio
+      for(int i=0; i<audioLength; i+=1000) {
+        mAudioOutput->write(audioData + i, min(1000, audioLength - i));
+        mCurrentAudioSample += min(1000, audioLength - i);
+        if (mCurrentAudioSample > mChannelLength || mState != VideoPlayerState::PLAYING)
+        {
+          mCurrentAudioSample = 0;
+          mVideoSource->updateAudioTime(1000 * mCurrentAudioSample / 16000);
+          break;
         }
-      }
-      else
-      {
-        Serial.printf("HTTP error: %d\n", httpCode);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        mVideoSource->updateAudioTime(1000 * mCurrentAudioSample / 16000);
       }
     }
     else
     {
-      Serial.println("Not connected to WiFi");
-      vTaskDelay(1000 / portTICK_PERIOD_MS);
+      vTaskDelay(100 / portTICK_PERIOD_MS);
     }
   }
 }
