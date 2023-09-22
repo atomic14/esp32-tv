@@ -24,3 +24,7 @@ The server is pretty simple, it has a few endpoints:
 The ESP32 firmware connects to the server and requests the channel info. The video playback is locked to the audio sample playback. The audio is played back using the I2S peripheral and we use that to know how much time has elapsed to request the correct frames. This way the video and audio are always in sync.
 
 You can get around 15 frames per second at 280x240 resolution, the main limitation is WiFi bandwidth and decoding the JPEGs.
+
+# Support for SD Cards
+
+I've added experimental support for streaming from SD Cards - it seems to work pretty well, but I've only tested it on the CYD board - https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display
