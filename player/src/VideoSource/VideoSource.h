@@ -14,8 +14,6 @@ class VideoSource {
     // e.g. the elapsed time is closest to the previous frame.
     // The buffer is re-allocated if the frame is larger than the previous frame.
     virtual bool getVideoFrame(uint8_t **buffer, size_t &bufferLength, size_t &frameLength) = 0;
-    // change the channel
-    virtual void setChannel(int channelIndex) = 0;
     // update the audio time
     void updateAudioTime(int audioTimeMs) {
       mAudioTimeMs = audioTimeMs;

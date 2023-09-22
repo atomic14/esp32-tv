@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "NetworkVideoSource.h"
+#include "../ChannelData/NetworkChannelData.h"
 
 void NetworkVideoSource::_frameDownloaderTask(void *param)
 {
@@ -13,7 +14,6 @@ void NetworkVideoSource::frameDownloaderTask()
 {
   HTTPClient http;
   http.setReuse(true);
-  char urlBuffer[200];
   uint8_t *downloadBuffer = NULL;
   int downloadBufferLength = 0;
   while (true)
@@ -42,8 +42,8 @@ void NetworkVideoSource::frameDownloaderTask()
     int videoTime = mAudioTimeMs + elapsedTime;
     if (WiFi.status() == WL_CONNECTED)
     {
-      sprintf(urlBuffer, "%s/%d/%d", mFrameURL, mCurrentChannel, videoTime);
-      http.begin(urlBuffer);
+      std::string url = mChannelData->getFrameURL() + "/" + std::to_string(videoTime);
+      http.begin(url.c_str());
       int httpCode = http.GET();
 
       if (httpCode == HTTP_CODE_OK)
@@ -91,8 +91,8 @@ void NetworkVideoSource::frameDownloaderTask()
 }
 
 
-NetworkVideoSource::NetworkVideoSource(const char *frameURL)
-: mFrameURL(frameURL) {
+NetworkVideoSource::NetworkVideoSource(NetworkChannelData *channelData) : mChannelData(channelData)
+{
 }
 
 void NetworkVideoSource::start() {
@@ -139,5 +139,4 @@ void NetworkVideoSource::setChannel(int channel) {
   mLastAudioTimeUpdateMs = millis();
   mFrameReady = false;
   mAudioTimeMs = 0;
-  mCurrentChannel = channel;
 }

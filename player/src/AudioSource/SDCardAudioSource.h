@@ -5,15 +5,14 @@
 #include <HTTPClient.h>
 #include "AudioSource.h"
 
-class NetworkChannelData;
+class SDCardChannelData;
 
-class NetworkAudioSource : public AudioSource
+class SDCardAudioSource : public AudioSource
 {
 private:
-  NetworkChannelData *mChannelData;
-  HTTPClient http;
+  SDCardChannelData *mChannelData = NULL;
 
 public:
-  NetworkAudioSource(NetworkChannelData *channelData);
+  SDCardAudioSource(SDCardChannelData *channelData);
   int getAudioSamples(int8_t **buffer, size_t &bufferSize, int currentAudioSample);
 };

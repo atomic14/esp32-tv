@@ -5,12 +5,17 @@
 #include "VideoPlayer.h"
 #include "audio_output/I2SOutput.h"
 #include "audio_output/DACOutput.h"
-#include "ChannelData.h"
+#include "ChannelData/NetworkChannelData.h"
+#include "ChannelData/SDCardChannelData.h"
 #include "AudioSource/NetworkAudioSource.h"
 #include "VideoSource/NetworkVideoSource.h"
+#include "AudioSource/SDCardAudioSource.h"
+#include "VideoSource/SDCardVideoSource.h"
+#include "AVIParser/AVIParser.h"
+#include "SDCard.h"
 
-const char *WIFI_SSID = "SSID";
-const char *WIFI_PASSWORD = "PASSWORD";
+const char *WIFI_SSID = "CMGResearch";
+const char *WIFI_PASSWORD = "02087552867";
 const char *FRAME_URL = "http://192.168.1.229:8123/frame";
 const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
 const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
@@ -25,6 +30,8 @@ RemoteInput *remoteInput = NULL;
 #warning "No DMA - Drawing may be slower"
 #endif
 
+VideoSource *videoSource = NULL;
+AudioSource *audioSource = NULL;
 VideoPlayer *videoPlayer = NULL;
 AudioOutput *audioOutput = NULL;
 ChannelData *channelData = NULL;
@@ -33,7 +40,12 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
-  // connect to Wifi
+  #ifdef USE_SDCARD
+  SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
+  channelData = new SDCardChannelData(card, "/");
+  audioSource = new SDCardAudioSource((SDCardChannelData *) channelData);
+  videoSource = new SDCardVideoSource((SDCardChannelData *) channelData);
+  #else
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -45,6 +57,10 @@ void setup()
   Serial.println("");
   // disable WiFi power saving for speed
   Serial.println("WiFi connected");
+  channelData = new NetworkChannelData(CHANNEL_INFO_URL, FRAME_URL, AUDIO_URL);
+  videoSource = new NetworkVideoSource((NetworkChannelData *) channelData);
+  audioSource = new NetworkAudioSource((NetworkChannelData *) channelData);
+  #endif
 
   tft.init();
   tft.setRotation(3);
@@ -76,15 +92,13 @@ void setup()
   audioOutput->start(16000);
 #endif
   videoPlayer = new VideoPlayer(
-    new NetworkVideoSource(FRAME_URL),
-    new NetworkAudioSource(AUDIO_URL),
+    channelData,
+    videoSource,
+    audioSource,
     tft,
     audioOutput
   );
   videoPlayer->start();
-
-  channelData = new ChannelData(CHANNEL_INFO_URL);
-
 #ifndef HAS_IR_REMOTE
   // no remote so we just play the first channel
   tft.setCursor(20, 20);
@@ -96,7 +110,7 @@ void setup()
     delay(1000);
   }
   // default to first channel
-  videoPlayer->setChannel(0, channelData->getChannelLength(0));
+  videoPlayer->setChannel(0);
   videoPlayer->play();
 #endif
 }
@@ -121,7 +135,7 @@ void loop()
         Serial.println("Failed to fetch channel data");
         delay(1000);
       }
-      videoPlayer->setChannel(0, channelData->getChannelLength(0));
+      videoPlayer->setChannel(0);
       videoPlayer->play();
       break;
     case RemoteCommands::VOLUME_UP:
@@ -135,7 +149,7 @@ void loop()
       videoPlayer->playStatic();
       delay(500);
       channel = (channel + 1) % channelData->getChannelCount();
-      videoPlayer->setChannel(channel, channelData->getChannelLength(channel));
+      videoPlayer->setChannel(channel);
       videoPlayer->play();
       Serial.printf("CHANNEL_UP %d\n", channel);
       break;
@@ -147,7 +161,7 @@ void loop()
       {
         channel = channelData->getChannelCount() - 1;
       }
-      videoPlayer->setChannel(channel, channelData->getChannelLength(channel));
+      videoPlayer->setChannel(channel);
       videoPlayer->play();
       Serial.printf("CHANNEL_DOWN %d\n", channel);
       break;

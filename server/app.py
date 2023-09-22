@@ -22,8 +22,8 @@ def get_audio(channel_index, start, length):
     if start > end:
         start = end
     if start == end:
-        # return a dummy array of 1024 zero bytes to play silence
-        return Response(b'\x00' * 1024, mimetype='audio/x-raw')
+        # return nothing - we've got no more data to give
+        return Response(b'', mimetype='audio/x-raw')
     slice = audio[start:end]
     return Response(slice, mimetype='audio/x-raw')
 

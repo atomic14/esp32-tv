@@ -8,12 +8,11 @@ class AudioOutput;
 
 class VideoSource;
 class AudioSource;
+class ChannelData;
 
 class VideoPlayer {
   private:
     int mChannelVisible = 0;
-    int mChannel = -1;
-    int mChannelLength = 0;
     VideoPlayerState mState = VideoPlayerState::STOPPED;
 
     // video playing
@@ -24,6 +23,8 @@ class VideoPlayer {
     VideoSource *mVideoSource = NULL;
     // audio source
     AudioSource *mAudioSource = NULL;
+    // channel information
+    ChannelData *mChannelData = NULL;
 
     // audio playing
     int mCurrentAudioSample = 0;
@@ -38,8 +39,8 @@ class VideoPlayer {
     friend int _doDraw(JPEGDRAW *pDraw);
 
   public:
-    VideoPlayer(VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput);
-    void setChannel(int channelIndex, int channelLength);
+    VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput);
+    void setChannel(int channelIndex);
     void start();
     void play();
     void stop();

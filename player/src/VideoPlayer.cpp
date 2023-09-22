@@ -4,6 +4,7 @@
 #include <HTTPClient.h>
 #include "VideoPlayer.h"
 #include "audio_output/AudioOutput.h"
+#include "ChannelData/ChannelData.h"
 #include "VideoSource/VideoSource.h"
 #include "AudioSource/AudioSource.h"
 
@@ -19,8 +20,8 @@ void VideoPlayer::_audioPlayerTask(void *param)
   player->audioPlayerTask();
 }
 
-VideoPlayer::VideoPlayer(VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput)
-: mVideoSource(videoSource), mAudioSource(audioSource), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
+VideoPlayer::VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput)
+: mChannelData(channelData), mVideoSource(videoSource), mAudioSource(audioSource), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
 {
 }
 
@@ -40,12 +41,11 @@ void VideoPlayer::start()
   xTaskCreatePinnedToCore(_audioPlayerTask, "audio_loop", 10000, this, 1, NULL, 1);
 }
 
-void VideoPlayer::setChannel(int channel, int channelLength)
+void VideoPlayer::setChannel(int channel)
 {
-  mVideoSource->setChannel(channel);
+  mChannelData->setChannel(channel);
+  // set the audio sample to 0 - TODO - move this somewhere else?
   mCurrentAudioSample = 0;
-  mChannel = channel;
-  mChannelLength = channelLength;
   mChannelVisible = millis();
 }
 
@@ -194,7 +194,7 @@ void VideoPlayer::framePlayerTask()
     if (millis() - mChannelVisible < 2000) {
       mDisplay.setCursor(20, 20);
       mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
-      mDisplay.printf("%d", mChannel);
+      mDisplay.printf("%d", mChannelData->getChannelNumber());
     }
     mDisplay.endWrite();
   }
@@ -202,6 +202,7 @@ void VideoPlayer::framePlayerTask()
 
 void VideoPlayer::audioPlayerTask()
 {
+  size_t bufferLength = 16000;
   int8_t *audioData = (int8_t *)malloc(16000);
   while (true)
   {
@@ -212,16 +213,24 @@ void VideoPlayer::audioPlayerTask()
       continue;
     }
     // get audio data to play
-    int audioLength = mAudioSource->getAudioSamples(audioData, 16000, mChannel, mCurrentAudioSample);
+    int audioLength = mAudioSource->getAudioSamples(&audioData, bufferLength, mCurrentAudioSample);
+    // have we reached the end of the channel?
+    if (audioLength == 0) {
+      // we want to loop the video so reset the channel data and start again
+      mChannelData->setChannel(mChannelData->getChannelNumber());
+      mCurrentAudioSample = 0;
+      mVideoSource->updateAudioTime(0);
+      continue;
+    }
     if (audioLength > 0) {
       // play the audio
       for(int i=0; i<audioLength; i+=1000) {
         mAudioOutput->write(audioData + i, min(1000, audioLength - i));
         mCurrentAudioSample += min(1000, audioLength - i);
-        if (mCurrentAudioSample > mChannelLength || mState != VideoPlayerState::PLAYING)
+        if (mState != VideoPlayerState::PLAYING)
         {
           mCurrentAudioSample = 0;
-          mVideoSource->updateAudioTime(1000 * mCurrentAudioSample / 16000);
+          mVideoSource->updateAudioTime(0);
           break;
         }
         mVideoSource->updateAudioTime(1000 * mCurrentAudioSample / 16000);
