@@ -13,7 +13,7 @@ private:
 protected:
   i2s_port_t m_i2s_port = I2S_NUM_0;
   int16_t *m_tmp_frames = NULL;
-  int volume = 10;
+  int mVolume = 10;
 public:
   AudioOutput(i2s_port_t i2s_port);
   virtual void start(uint32_t sample_rate) = 0;
@@ -27,15 +27,15 @@ public:
   void write(int16_t *samples, int count);
 
   void volumeUp() {
-    if (volume == 10) {
+    if (mVolume == 10) {
       return;
     }
-    volume++;
+    mVolume++;
   }
   void volumeDown() {
-    if (volume == 0) {
+    if (mVolume == 0) {
       return;
     }
-    volume--;
+    mVolume--;
   }
 };

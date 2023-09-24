@@ -17,7 +17,7 @@ int SDCardAudioSource::getAudioSamples(int8_t **buffer, size_t &bufferSize, int 
     int audioLength = parser->getNextChunk((uint8_t **) buffer, bufferSize);
     // conver the audio from unsigned to signed
     for (int i = 0; i < audioLength; i++) {
-      (*buffer)[i] -= 128;
+      (*buffer)[i] = ((uint8_t)(*buffer)[i]) - 128;
     }
     return audioLength;
   }

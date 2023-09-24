@@ -25,7 +25,7 @@ void DACOutput::start(uint32_t sample_rate)
         Serial.printf("i2s_driver_install failed: %d\n", res);
     }
     // enable the DAC channels
-    res = i2s_set_dac_mode(I2S_DAC_CHANNEL_LEFT_EN);
+    res = i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     if (res != ESP_OK) {
         Serial.printf("i2s_set_dac_mode failed: %d\n", res);
     }

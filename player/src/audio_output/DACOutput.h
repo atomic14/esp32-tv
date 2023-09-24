@@ -15,7 +15,6 @@ public:
     virtual int16_t process_sample(int16_t sample)
     {
         // DAC needs unsigned 16 bit samples
-        // make them slightly quieter or they are really loud
         return sample + 32768;
     }
 };

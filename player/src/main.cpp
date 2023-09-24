@@ -41,6 +41,7 @@ void setup()
 {
   Serial.begin(115200);
   #ifdef USE_SDCARD
+  Serial.println("Using SD Card");
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
   channelData = new SDCardChannelData(card, "/");
   audioSource = new SDCardAudioSource((SDCardChannelData *) channelData);

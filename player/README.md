@@ -15,7 +15,7 @@ This is a work in progress, but it should be able to stream AVI files from an SD
 To create a compatible AVI file, you can use ffmpeg:
 
 ```
-ffmpeg -i input.mp4 -vf "scale=320:240" -r 15 -c:v mjpeg -q:v 10 -acodec pcm_u8 -ar 16000 -ac 1 output.avi
+ffmpeg -i input.mp4 -vf "scale=320:240" -r 15 -c:v mjpeg -q:v 10 -acodec pcm_u8 -af "loudnorm" -ar 16000 -ac 1 output.avi
 ```
 
 * -i input.mp4: Specifies the input file named input.mp4.
@@ -27,3 +27,10 @@ ffmpeg -i input.mp4 -vf "scale=320:240" -r 15 -c:v mjpeg -q:v 10 -acodec pcm_u8 
 * -ar 16000: Sets the audio sample rate to 16KHz.
 * -ac 1: Sets the audio to mono (single channel).
 * output.avi: Specifies the output file named output.avi.
+
+If you want to get fancy you can use the loudnorm filter to normalize the audio levels. There's a script in the `tools` folder that will do this for you. You will need `jq` installed to use it.
+
+```
+./tools/convert_movie_with_nornalization.sh input.mp4 output.avi
+```
+
