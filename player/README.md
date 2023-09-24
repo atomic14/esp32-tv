@@ -8,9 +8,23 @@ You'll also need some way of getting sound out. I recommend the MAX98357A breako
 
 The code should work with pretty much any ESP32 board, but I've only tested it on a few.
 
-## Exerpimental support for AVI files on an SDCard
+## Suppoer for AVI files on an SDCard
 
 This is a work in progress, but it should be able to stream AVI files from an SDCard - see the cheap yellow display setup in the ini file for the config.
+
+Enabled this by adding the following defines to platformio.ini:
+
+```
+-DUSE_SDCARD
+-DSD_CARD_MISO=GPIO_NUM_3
+-DSD_CARD_MOSI=GPIO_NUM_8
+-DSD_CARD_CLK=GPIO_NUM_46
+-DSD_CARD_CS=GPIO_NUM_18
+```
+
+Modify the pin numbers as needed.
+
+This will turn off WiFi streaming and stream AVI files from the SD Card.
 
 To create a compatible AVI file, you can use ffmpeg:
 
