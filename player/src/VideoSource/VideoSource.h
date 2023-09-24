@@ -33,4 +33,5 @@ class VideoSource {
           break;
       }
     }
+    virtual void setChannel(int channel)=0;
 };

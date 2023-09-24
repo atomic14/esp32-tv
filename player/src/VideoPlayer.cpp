@@ -47,6 +47,8 @@ void VideoPlayer::setChannel(int channel)
   // set the audio sample to 0 - TODO - move this somewhere else?
   mCurrentAudioSample = 0;
   mChannelVisible = millis();
+  // update the video source
+  mVideoSource->setChannel(channel);
 }
 
 void VideoPlayer::play()
