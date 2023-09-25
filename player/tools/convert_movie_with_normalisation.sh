@@ -23,6 +23,6 @@ input_thresh=$(echo "$loudness_data" | jq -r '.input_thresh')
 
 # Second pass: Normalize audio using extracted values
 echo "Performing second pass to normalize audio..."
-ffmpeg -i "$input_file" -vf "scale=$frame_size" -af "loudnorm=measured_i=$input_i:measured_tp=$input_tp:measured_lra=$input_lra:measured_thresh=$input_thresh:offset=0.0:linear=true:print_format=summary" -r 15 -c:v mjpeg -q:v 10 -acodec pcm_u8 -ar 16000 -ac 1 "$output_file"
+ffmpeg -i "$input_file" -vf "scale=$frame_size:force_original_aspect_ratio=increase,crop=$frame_size" -af "loudnorm=measured_i=$input_i:measured_tp=$input_tp:measured_lra=$input_lra:measured_thresh=$input_thresh:offset=0.0:linear=true:print_format=summary" -r 15 -c:v mjpeg -q:v 10 -acodec pcm_u8 -ar 16000 -ac 1 "$output_file"
 
 echo "Normalization complete. Output saved as $output_file"

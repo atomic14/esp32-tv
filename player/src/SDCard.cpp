@@ -86,5 +86,7 @@ std::vector<std::string> SDCard::listFiles(const char *folder, const char *exten
     }
     file = root.openNextFile();
   }
+  // sort the files alphabetically
+  std::sort(files.begin(), files.end());
   return files;
 }
