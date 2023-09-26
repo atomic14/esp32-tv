@@ -28,4 +28,4 @@ You can get around 15 frames per second at 280x240 resolution, the main limitati
 
 # Support for SD Cards
 
-I've added experimental support for streaming from SD Cards - it seems to work pretty well, but I've only tested it on the CYD board - https://github.com/witnessmenow/ESP32-Cheap-Yellow-Display
+In the README file for the firmware there are instructions on how to convert a video file to a MJPEG AVI file - if you've got a device with an SD Card you can use this instead of WiFi streaming.
