@@ -7,10 +7,15 @@
 
 SDCard::SDCard(int miso, int mosi, int clk, int cs)
 {
+  #ifndef TDISPLAY
   spi.setFrequency(80000000);
   spi.begin(clk, miso, mosi, cs);
 
   if (!SD.begin(cs, spi, 80000000))
+  #else
+  spi.begin(clk, miso, mosi, cs);
+  if (!SD.begin(cs, spi))
+  #endif
   {
     Serial.println("Card Mount Failed");
     return;
