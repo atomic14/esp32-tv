@@ -200,6 +200,7 @@ void VideoPlayer::framePlayerTask()
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
+    #if CORE_DEBUG_LEVEL > 0
     // show channel indicator 
     if (millis() - mChannelVisible < 2000) {
       mDisplay.setCursor(20, 20);
@@ -211,6 +212,7 @@ void VideoPlayer::framePlayerTask()
     mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
     mDisplay.printf("%d", frameTimes.size() / 5);
     mDisplay.endWrite();
+    #endif
   }
 }
 
