@@ -1,10 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <TFT_eSPI.h>
-#include <driver/rtc_io.h>
-#include <esp_bt.h>
-#include <esp_bt_main.h>
-#include <esp_wifi.h>
 #include "RemoteInput.h"
 #include "VideoPlayer.h"
 #include "audio_output/I2SOutput.h"
@@ -17,17 +13,14 @@
 #include "VideoSource/SDCardVideoSource.h"
 #include "AVIParser/AVIParser.h"
 #include "SDCard.h"
+#include "PowerUtils.h"
+#include "Button.h"
 
 const char *WIFI_SSID = "CMGResearch";
 const char *WIFI_PASSWORD = "02087552867";
 const char *FRAME_URL = "http://192.168.1.229:8123/frame";
 const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
 const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
-
-#define ADC_EN 14
-#define HW_EN   33
-#define BUTTON_R 35
-#define BUTTON_L 0
 
 #ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
@@ -49,11 +42,10 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
-  pinMode(HW_EN, OUTPUT);
-  digitalWrite(HW_EN, HIGH);  // step-up on
-  pinMode(BUTTON_L, INPUT_PULLUP);
-  pinMode(BUTTON_R, INPUT);
-  delay(4000);
+  #ifdef TDISPLAY
+  powerInit();
+  buttonInit();
+  #endif
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
@@ -130,34 +122,29 @@ void setup()
 #endif
 }
 
-void powerDeepSeep() {
-  digitalWrite(ADC_EN, LOW);
-  delay(10);
-  rtc_gpio_init(GPIO_NUM_14);
-  rtc_gpio_set_direction(GPIO_NUM_14, RTC_GPIO_MODE_OUTPUT_ONLY);
-  rtc_gpio_set_level(GPIO_NUM_14, 1);
-  esp_bluedroid_disable();
-  esp_bt_controller_disable();
-  esp_wifi_stop();
-  esp_deep_sleep_disable_rom_logging();
-  // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_SLOW_MEM, ESP_PD_OPTION_OFF);
-  // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_OFF);
-  // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
-  delay(1000);
-  esp_deep_sleep_start();
-}
-
-bool buttonToggle(){
-  if (digitalRead(BUTTON_R) == 0) return true;
-  else return false;
-}
-
-bool buttonPowerOff(){
-  if (digitalRead(BUTTON_L) == 0) return true;
-  else return false;
-}
-
 int channel = 0;
+
+void channelDown() {
+  videoPlayer->playStatic();
+  delay(500);
+  channel--;
+  if (channel < 0) {
+    channel = channelData->getChannelCount() - 1;
+  }
+  videoPlayer->setChannel(channel);
+  videoPlayer->play();
+  Serial.printf("CHANNEL_DOWN %d\n", channel);
+}
+
+void channelUp() {
+  videoPlayer->playStatic();
+  delay(500);
+  channel = (channel + 1) % channelData->getChannelCount();
+  videoPlayer->setChannel(channel);
+  videoPlayer->play();
+  Serial.printf("CHANNEL_UP %d\n", channel);
+}
+
 void loop()
 {
 #ifdef HAS_IR_REMOTE
@@ -188,42 +175,24 @@ void loop()
       Serial.println("VOLUME_DOWN");
       break;
     case RemoteCommands::CHANNEL_UP:
-      videoPlayer->playStatic();
-      delay(500);
-      channel = (channel + 1) % channelData->getChannelCount();
-      videoPlayer->setChannel(channel);
-      videoPlayer->play();
-      Serial.printf("CHANNEL_UP %d\n", channel);
+      channelUp();
       break;
     case RemoteCommands::CHANNEL_DOWN:
-      videoPlayer->playStatic();
-      delay(500);
-      channel--;
-      if (channel < 0)
-      {
-        channel = channelData->getChannelCount() - 1;
-      }
-      videoPlayer->setChannel(channel);
-      videoPlayer->play();
-      Serial.printf("CHANNEL_DOWN %d\n", channel);
+      channelDown();
       break;
     }
     delay(100);
     remoteInput->getLatestCommand();
   }
-#else
-  if (buttonToggle()) {
-    Serial.printf("CHANNEL_DOWN %d\n", channel);
-    videoPlayer->playStatic();
-    delay(500);
-    channel--;
-    if (channel < 0) {
-      channel = channelData->getChannelCount() - 1;
-    }
-    videoPlayer->setChannel(channel);
-    videoPlayer->play();
+#endif
+#ifdef TDISPLAY
+  if (buttonLeft()) {
+    channelUp();
   }
-  if (buttonPowerOff()){
+  if (buttonRight()) {
+    channelDown();
+  }
+  if (buttonPowerOff()) {
     powerDeepSeep();
   }
 #endif
