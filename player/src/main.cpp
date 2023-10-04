@@ -13,6 +13,8 @@
 #include "VideoSource/SDCardVideoSource.h"
 #include "AVIParser/AVIParser.h"
 #include "SDCard.h"
+#include "PowerUtils.h"
+#include "Button.h"
 
 const char *WIFI_SSID = "CMGResearch";
 const char *WIFI_PASSWORD = "02087552867";
@@ -40,6 +42,8 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
+  powerInit();
+  buttonInit();
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
@@ -117,6 +121,28 @@ void setup()
 }
 
 int channel = 0;
+
+void channelDown() {
+  videoPlayer->playStatic();
+  delay(500);
+  channel--;
+  if (channel < 0) {
+    channel = channelData->getChannelCount() - 1;
+  }
+  videoPlayer->setChannel(channel);
+  videoPlayer->play();
+  Serial.printf("CHANNEL_DOWN %d\n", channel);
+}
+
+void channelUp() {
+  videoPlayer->playStatic();
+  delay(500);
+  channel = (channel + 1) % channelData->getChannelCount();
+  videoPlayer->setChannel(channel);
+  videoPlayer->play();
+  Serial.printf("CHANNEL_UP %d\n", channel);
+}
+
 void loop()
 {
 #ifdef HAS_IR_REMOTE
@@ -147,29 +173,24 @@ void loop()
       Serial.println("VOLUME_DOWN");
       break;
     case RemoteCommands::CHANNEL_UP:
-      videoPlayer->playStatic();
-      delay(500);
-      channel = (channel + 1) % channelData->getChannelCount();
-      videoPlayer->setChannel(channel);
-      videoPlayer->play();
-      Serial.printf("CHANNEL_UP %d\n", channel);
+      channelUp();
       break;
     case RemoteCommands::CHANNEL_DOWN:
-      videoPlayer->playStatic();
-      delay(500);
-      channel--;
-      if (channel < 0)
-      {
-        channel = channelData->getChannelCount() - 1;
-      }
-      videoPlayer->setChannel(channel);
-      videoPlayer->play();
-      Serial.printf("CHANNEL_DOWN %d\n", channel);
+      channelDown();
       break;
     }
     delay(100);
     remoteInput->getLatestCommand();
   }
 #endif
+  if (buttonLeft()) {
+    channelUp();
+  }
+  if (buttonRight()) {
+    channelDown();
+  }
+  if (buttonPowerOff()) {
+    powerDeepSeep();
+  }
   delay(100);
 }
