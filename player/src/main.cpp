@@ -42,10 +42,8 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
-  #ifdef TDISPLAY
   powerInit();
   buttonInit();
-  #endif
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
