@@ -185,7 +185,6 @@ void loop()
     remoteInput->getLatestCommand();
   }
 #endif
-#ifdef TDISPLAY
   if (buttonLeft()) {
     channelUp();
   }
@@ -195,6 +194,5 @@ void loop()
   if (buttonPowerOff()) {
     powerDeepSeep();
   }
-#endif
   delay(100);
 }

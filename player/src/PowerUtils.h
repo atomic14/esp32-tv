@@ -1,12 +1,14 @@
-#ifdef TDISPLAY
 
+#ifdef TDISPLAY        // TODO: We need that because the current "touch-down" variant don't compile with these definitions
 #include <Arduino.h>
 #include <driver/rtc_io.h>
 #include <esp_bt.h>
 #include <esp_bt_main.h>
 #include <esp_wifi.h>
+#endif
 
 void powerDeepSeep() {
+#ifdef TDISPLAY
   digitalWrite(ADC_EN, LOW);
   delay(10);
   rtc_gpio_init(GPIO_NUM_14);
@@ -21,11 +23,12 @@ void powerDeepSeep() {
   // esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
   delay(500);
   esp_deep_sleep_start();
+#endif
 }
 
 void powerInit() {
+#ifdef TDISPLAY
   pinMode(HW_EN, OUTPUT);
-  digitalWrite(HW_EN, HIGH);  // step-up on 
-}
-
+  digitalWrite(HW_EN, HIGH);  // step-up on
 #endif
+}
