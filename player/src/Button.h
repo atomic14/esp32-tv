@@ -5,8 +5,8 @@ M5Touch Touch;
 TouchPoint_t pos;   
 #endif
 
-int _btn_left;
-int _btn_right;
+int _btn_left=-1;
+int _btn_right=-1;
 
 bool buttonRight(){
 #ifdef M5CORE2
