@@ -1,10 +1,14 @@
-
 #ifdef TDISPLAY        // TODO: We need that because the current "touch-down" variant don't compile with these definitions
 #include <Arduino.h>
 #include <driver/rtc_io.h>
 #include <esp_bt.h>
 #include <esp_bt_main.h>
 #include <esp_wifi.h>
+#endif
+#ifdef M5CORE2
+#include "AXP192.h"
+
+AXP192 Axp;
 #endif
 
 void powerDeepSeep() {
@@ -30,5 +34,12 @@ void powerInit() {
 #ifdef TDISPLAY
   pinMode(HW_EN, OUTPUT);
   digitalWrite(HW_EN, HIGH);  // step-up on
+#endif
+#ifdef M5CORE2
+  Axp.begin();
+  Axp.SetLcdVoltage(3300);
+  Axp.SetBusPowerMode(0);
+  Axp.SetCHGCurrent(AXP192::kCHG_190mA);
+  Axp.SetSpkEnable(true);
 #endif
 }
