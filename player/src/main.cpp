@@ -123,6 +123,9 @@ void setup()
   videoPlayer->setChannel(0);
   videoPlayer->play();
 #endif
+  #ifdef M5CORE2
+  audioOutput->setVolume(4);
+  #endif
 }
 
 int channel = 0;

@@ -26,6 +26,11 @@ public:
   void write(int8_t *samples, int count);
   void write(int16_t *samples, int count);
 
+  void setVolume(int volume){
+    if (volume > 10 || volume < 0) mVolume = 10;
+    else mVolume = volume;
+  }
+
   void volumeUp() {
     if (mVolume == 10) {
       return;

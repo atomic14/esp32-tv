@@ -65,7 +65,7 @@ void buttonInit(){
 
 void buttonLoop(){
   static uint_fast64_t buttonTimeStamp = 0;
-  if (millis() - buttonTimeStamp > 80) {
+  if (millis() - buttonTimeStamp > 20) {
     buttonTimeStamp = millis();
     #ifdef M5CORE2
     pos = Touch.getPressPoint();
