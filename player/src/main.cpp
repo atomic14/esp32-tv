@@ -25,7 +25,9 @@ const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
 #ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
 #else
+#ifndef HAS_BUTTONS
 #warning "No Remote Input - Will default to playing channel 0"
+#endif
 #endif
 
 #ifndef USE_DMA
@@ -69,6 +71,9 @@ void setup()
 
   tft.init();
   tft.setRotation(3);
+  #ifdef M5CORE2
+  tft.setRotation(6);
+  #endif
   tft.fillScreen(TFT_BLACK);
   #ifdef USE_DMA
   tft.initDMA();
@@ -118,9 +123,24 @@ void setup()
   videoPlayer->setChannel(0);
   videoPlayer->play();
 #endif
+  #ifdef M5CORE2
+  audioOutput->setVolume(4);
+  #endif
 }
 
 int channel = 0;
+
+void volumeUp() {
+  audioOutput->volumeUp();
+  delay(500);
+  Serial.println("VOLUME_UP");
+}
+
+void volumeDown() {
+  audioOutput->volumeDown();
+  delay(500);
+  Serial.println("VOLUME_DOWN");
+}
 
 void channelDown() {
   videoPlayer->playStatic();
@@ -166,11 +186,10 @@ void loop()
       videoPlayer->play();
       break;
     case RemoteCommands::VOLUME_UP:
-      audioOutput->volumeUp();
+      volumeUp();
       break;
     case RemoteCommands::VOLUME_DOWN:
-      audioOutput->volumeDown();
-      Serial.println("VOLUME_DOWN");
+      volumeDown();
       break;
     case RemoteCommands::CHANNEL_UP:
       channelUp();
@@ -183,14 +202,24 @@ void loop()
     remoteInput->getLatestCommand();
   }
 #endif
+#ifdef HAS_BUTTONS
   if (buttonLeft()) {
-    channelUp();
-  }
-  if (buttonRight()) {
     channelDown();
   }
+  if (buttonRight()) {
+    channelUp();
+  }
+  if (buttonUp()) {
+    volumeUp();
+  }
+  if (buttonDown()) {
+    volumeDown();
+  }
   if (buttonPowerOff()) {
+    Serial.println("POWER OFF");
+    delay(500);
     powerDeepSeep();
   }
-  delay(100);
+  buttonLoop();
+#endif
 }
