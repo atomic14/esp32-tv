@@ -167,6 +167,7 @@ void VideoPlayer::framePlayerTask()
           int grey = xorshift16() >> 8;
           staticBuffer[p] = mDisplay.color565(grey, grey, grey);
         }
+        mDisplay.startWrite();
         #ifdef USE_DMA
         mDisplay.dmaWait();
         #endif
@@ -176,6 +177,7 @@ void VideoPlayer::framePlayerTask()
         #else
         mDisplay.pushPixels(staticBuffer, width * height);
         #endif
+        mDisplay.endWrite();
       }
       vTaskDelay(50 / portTICK_PERIOD_MS);
       continue;
@@ -200,19 +202,19 @@ void VideoPlayer::framePlayerTask()
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
-    #if CORE_DEBUG_LEVEL > 0
     // show channel indicator 
     if (millis() - mChannelVisible < 2000) {
       mDisplay.setCursor(20, 20);
       mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
       mDisplay.printf("%d", mChannelData->getChannelNumber());
     }
+    #if CORE_DEBUG_LEVEL > 0
     // show the frame rate in the top right
     mDisplay.setCursor(mDisplay.width() - 50, 20);
     mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
     mDisplay.printf("%d", frameTimes.size() / 5);
-    mDisplay.endWrite();
     #endif
+    mDisplay.endWrite();
   }
 }
 

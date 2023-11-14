@@ -18,9 +18,9 @@
 
 const char *WIFI_SSID = "CMGResearch";
 const char *WIFI_PASSWORD = "02087552867";
-const char *FRAME_URL = "http://192.168.1.229:8123/frame";
-const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
-const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
+const char *FRAME_URL = "http://192.168.1.185:8123/frame";
+const char *AUDIO_URL = "http://192.168.1.185:8123/audio";
+const char *CHANNEL_INFO_URL = "http://192.168.1.185:8123/channel_info";
 
 #ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
@@ -48,7 +48,16 @@ void setup()
   buttonInit();
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
+  // power on the SD card
+  if (SD_CARD_PWR != GPIO_NUM_NC) {
+    pinMode(SD_CARD_PWR, OUTPUT);
+    digitalWrite(SD_CARD_PWR, SD_CARD_PWR_ON);
+  }
+  #ifdef USE_SDIO
+  SDCard *card = new SDCard(SD_CARD_CLK, SD_CARD_CMD, SD_CARD_D0, SD_CARD_D1, SD_CARD_D2, SD_CARD_D3);
+  #else
   SDCard *card = new SDCard(SD_CARD_MISO, SD_CARD_MOSI, SD_CARD_CLK, SD_CARD_CS);
+  #endif
   channelData = new SDCardChannelData(card, "/");
   audioSource = new SDCardAudioSource((SDCardChannelData *) channelData);
   videoSource = new SDCardVideoSource((SDCardChannelData *) channelData);
@@ -69,6 +78,13 @@ void setup()
   audioSource = new NetworkAudioSource((NetworkChannelData *) channelData);
   #endif
 
+  // power on the tft
+  if (TFT_POWER != GPIO_NUM_NC) {
+    Serial.println("Powering on TFT");
+    pinMode(TFT_POWER, OUTPUT);
+    digitalWrite(TFT_POWER, TFT_POWER_ON);
+  }
+
   tft.init();
   tft.setRotation(3);
   #ifdef M5CORE2
@@ -81,7 +97,7 @@ void setup()
   tft.fillScreen(TFT_BLACK);
   tft.setTextFont(2);
   tft.setTextSize(2);
-
+  tft.setTextColor(TFT_GREEN, TFT_BLACK);
 #ifdef HAS_IR_REMOTE
   remoteInput = new RemoteInput(IR_RECV_PIN, IR_RECV_PWR, IR_RECV_GND, IR_RECV_IND);
   remoteInput->start();
@@ -200,6 +216,10 @@ void loop()
     }
     delay(100);
     remoteInput->getLatestCommand();
+  } else {
+    // important this needs to stay otherwise we are constantly polling the IR Remote
+    // and there's no time for anything else to run.
+    delay(200);
   }
 #endif
 #ifdef HAS_BUTTONS
