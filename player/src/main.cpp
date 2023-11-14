@@ -49,10 +49,12 @@ void setup()
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
   // power on the SD card
+  #ifdef SD_CARD_PWR
   if (SD_CARD_PWR != GPIO_NUM_NC) {
     pinMode(SD_CARD_PWR, OUTPUT);
     digitalWrite(SD_CARD_PWR, SD_CARD_PWR_ON);
   }
+  #endif
   #ifdef USE_SDIO
   SDCard *card = new SDCard(SD_CARD_CLK, SD_CARD_CMD, SD_CARD_D0, SD_CARD_D1, SD_CARD_D2, SD_CARD_D3);
   #else
@@ -79,11 +81,13 @@ void setup()
   #endif
 
   // power on the tft
+  #ifdef TFT_POWER
   if (TFT_POWER != GPIO_NUM_NC) {
     Serial.println("Powering on TFT");
     pinMode(TFT_POWER, OUTPUT);
     digitalWrite(TFT_POWER, TFT_POWER_ON);
   }
+  #endif
 
   tft.init();
   tft.setRotation(3);
