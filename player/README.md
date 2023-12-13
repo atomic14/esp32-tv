@@ -45,6 +45,6 @@ ffmpeg -i input.mp4 -vf "scale=280:240:force_original_aspect_ratio=increase,crop
 If you want to get fancy you can use the loudnorm filter to normalize the audio levels. There's a script in the `tools` folder that will do this for you. You will need `jq` installed to use it.
 
 ```
-./tools/convert_movie_with_nornalization.sh input.mp4 output.avi
+./tools/convert_movie_with_normalisation.sh input.mp4 output.avi
 ```
 
