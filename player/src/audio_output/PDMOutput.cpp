@@ -1,15 +1,16 @@
 
-#include "I2SOutput.h"
+#include "PDMOutput.h"
+#include <Arduino.h>
 
-I2SOutput::I2SOutput(i2s_port_t i2s_port, i2s_pin_config_t &i2s_pins) : I2SBase(i2s_port), m_i2s_pins(i2s_pins)
+PDMOutput::PDMOutput(i2s_port_t i2s_port, i2s_pin_config_t &i2s_pins) : I2SBase(i2s_port), m_i2s_pins(i2s_pins)
 {
 }
 
-void I2SOutput::start(uint32_t sample_rate)
+void PDMOutput::start(uint32_t sample_rate)
 {
     // i2s config for writing both channels of I2S
     i2s_config_t i2s_config = {
-        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+        .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_PDM),
         .sample_rate = sample_rate,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,

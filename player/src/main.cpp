@@ -5,6 +5,8 @@
 #include "VideoPlayer.h"
 #include "audio_output/I2SOutput.h"
 #include "audio_output/DACOutput.h"
+#include "audio_output/PDMTimerOutput.h"
+#include "audio_output/PDMOutput.h"
 #include "ChannelData/NetworkChannelData.h"
 #include "ChannelData/SDCardChannelData.h"
 #include "AudioSource/NetworkAudioSource.h"
@@ -18,9 +20,9 @@
 
 const char *WIFI_SSID = "CMGResearch";
 const char *WIFI_PASSWORD = "02087552867";
-const char *FRAME_URL = "http://192.168.1.185:8123/frame";
-const char *AUDIO_URL = "http://192.168.1.185:8123/audio";
-const char *CHANNEL_INFO_URL = "http://192.168.1.185:8123/channel_info";
+const char *FRAME_URL = "http://192.168.1.229:8123:8123/frame";
+const char *AUDIO_URL = "http://192.168.1.229:8123/audio";
+const char *CHANNEL_INFO_URL = "http://192.168.1.229:8123/channel_info";
 
 #ifdef HAS_IR_REMOTE
 RemoteInput *remoteInput = NULL;
@@ -44,6 +46,10 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
+  Serial.printf("Total heap: %d\n", ESP.getHeapSize());
+  Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
+  Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
+  Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
   powerInit();
   buttonInit();
   #ifdef USE_SDCARD
@@ -110,7 +116,18 @@ void setup()
 #ifdef USE_DAC_AUDIO
   audioOutput = new DACOutput(I2S_NUM_0);
   audioOutput->start(16000);
-#else
+#endif
+#ifdef PDM_GPIO_NUM
+  // i2s speaker pins
+  i2s_pin_config_t i2s_speaker_pins = {
+      .bck_io_num = I2S_PIN_NO_CHANGE,
+      .ws_io_num = GPIO_NUM_45,
+      .data_out_num = PDM_GPIO_NUM,
+      .data_in_num = I2S_PIN_NO_CHANGE};
+  audioOutput = new PDMOutput(I2S_NUM_0, i2s_speaker_pins);
+  audioOutput->start(16000);
+#endif
+#ifdef I2S_SPEAKER_SERIAL_CLOCK
   // i2s speaker pins
   i2s_pin_config_t i2s_speaker_pins = {
       .bck_io_num = I2S_SPEAKER_SERIAL_CLOCK,
