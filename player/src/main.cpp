@@ -46,6 +46,10 @@ TFT_eSPI tft = TFT_eSPI();
 void setup()
 {
   Serial.begin(115200);
+  for(int i = 0; i<10; i++) {
+    Serial.println(".");
+    delay(500);
+  }
   Serial.printf("Total heap: %d\n", ESP.getHeapSize());
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
@@ -96,9 +100,10 @@ void setup()
   #endif
 
   tft.init();
-  tft.setRotation(3);
   #ifdef M5CORE2
   tft.setRotation(6);
+  #else
+  tft.setRotation(3);
   #endif
   tft.fillScreen(TFT_BLACK);
   #ifdef USE_DMA
@@ -121,13 +126,17 @@ void setup()
   // i2s speaker pins
   i2s_pin_config_t i2s_speaker_pins = {
       .bck_io_num = I2S_PIN_NO_CHANGE,
-      .ws_io_num = GPIO_NUM_45,
+      .ws_io_num = GPIO_NUM_0,
       .data_out_num = PDM_GPIO_NUM,
       .data_in_num = I2S_PIN_NO_CHANGE};
   audioOutput = new PDMOutput(I2S_NUM_0, i2s_speaker_pins);
   audioOutput->start(16000);
 #endif
 #ifdef I2S_SPEAKER_SERIAL_CLOCK
+#ifdef SPK_MODE
+  pinMode(SPK_MODE, OUTPUT);
+  digitalWrite(SPK_MODE, HIGH);
+#endif
   // i2s speaker pins
   i2s_pin_config_t i2s_speaker_pins = {
       .bck_io_num = I2S_SPEAKER_SERIAL_CLOCK,
@@ -237,10 +246,6 @@ void loop()
     }
     delay(100);
     remoteInput->getLatestCommand();
-  } else {
-    // important this needs to stay otherwise we are constantly polling the IR Remote
-    // and there's no time for anything else to run.
-    delay(200);
   }
 #endif
 #ifdef HAS_BUTTONS
@@ -262,5 +267,9 @@ void loop()
     powerDeepSeep();
   }
   buttonLoop();
+#else
+    // important this needs to stay otherwise we are constantly polling the IR Remote
+    // and there's no time for anything else to run.
+    delay(200);
 #endif
 }
