@@ -1,9 +1,13 @@
 #pragma once
+#include <Arduino.h>
+// #ifdef LED_MATRIX
+// struct File; // fixes weird compilation error
+// #endif
 #include "JPEGDEC.h"
 
 #include "VideoPlayerState.h"
 
-class TFT_eSPI;
+class Display;
 class AudioOutput;
 
 class VideoSource;
@@ -16,7 +20,7 @@ class VideoPlayer {
     VideoPlayerState mState = VideoPlayerState::STOPPED;
 
     // video playing
-    TFT_eSPI &mDisplay;
+    Display &mDisplay;
     JPEGDEC mJpeg;
 
     // video source
@@ -39,7 +43,7 @@ class VideoPlayer {
     friend int _doDraw(JPEGDRAW *pDraw);
 
   public:
-    VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput);
+    VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, Display &display, AudioOutput *audioOutput);
     void setChannel(int channelIndex);
     void start();
     void play();

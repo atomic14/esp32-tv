@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <TFT_eSPI.h>
+#include "Displays/TFT.h"
+#include "Displays/Matrix.h"
 #include "RemoteInput.h"
 #include "VideoPlayer.h"
-#include "audio_output/I2SOutput.h"
-#include "audio_output/DACOutput.h"
-#include "audio_output/PDMTimerOutput.h"
-#include "audio_output/PDMOutput.h"
+#include "AudioOutput/I2SOutput.h"
+#include "AudioOutput/DACOutput.h"
+#include "AudioOutput/PDMTimerOutput.h"
+#include "AudioOutput/PDMOutput.h"
 #include "ChannelData/NetworkChannelData.h"
 #include "ChannelData/SDCardChannelData.h"
 #include "AudioSource/NetworkAudioSource.h"
@@ -41,7 +42,12 @@ AudioSource *audioSource = NULL;
 VideoPlayer *videoPlayer = NULL;
 AudioOutput *audioOutput = NULL;
 ChannelData *channelData = NULL;
+#ifdef LED_MATRIX
+Matrix display;
+#else
 TFT_eSPI tft = TFT_eSPI();
+TFT display(tft);
+#endif
 
 void setup()
 {
@@ -90,29 +96,6 @@ void setup()
   audioSource = new NetworkAudioSource((NetworkChannelData *) channelData);
   #endif
 
-  // power on the tft
-  #ifdef TFT_POWER
-  if (TFT_POWER != GPIO_NUM_NC) {
-    Serial.println("Powering on TFT");
-    pinMode(TFT_POWER, OUTPUT);
-    digitalWrite(TFT_POWER, TFT_POWER_ON);
-  }
-  #endif
-
-  tft.init();
-  #ifdef M5CORE2
-  tft.setRotation(6);
-  #else
-  tft.setRotation(3);
-  #endif
-  tft.fillScreen(TFT_BLACK);
-  #ifdef USE_DMA
-  tft.initDMA();
-  #endif
-  tft.fillScreen(TFT_BLACK);
-  tft.setTextFont(2);
-  tft.setTextSize(2);
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
 #ifdef HAS_IR_REMOTE
   remoteInput = new RemoteInput(IR_RECV_PIN, IR_RECV_PWR, IR_RECV_GND, IR_RECV_IND);
   remoteInput->start();
@@ -151,15 +134,12 @@ void setup()
     channelData,
     videoSource,
     audioSource,
-    tft,
+    display,
     audioOutput
   );
   videoPlayer->start();
 #ifndef HAS_IR_REMOTE
-  // no remote so we just play the first channel
-  tft.setCursor(20, 20);
-  tft.setTextColor(TFT_GREEN, TFT_BLACK);
-  tft.println("TUNING...");
+  display.drawTuningText();
   // get the channel info
   while(!channelData->fetchChannelData()) {
     Serial.println("Failed to fetch channel data");

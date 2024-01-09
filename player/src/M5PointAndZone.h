@@ -1,3 +1,5 @@
+#ifdef M5CORE2
+
 /*
 
 == The PointAndZone Library ==
@@ -187,3 +189,5 @@ class Zone {
 };
 
 #endif /* _POINTANDZONE_H_ */
+
+#endif /* M5CORE2 */

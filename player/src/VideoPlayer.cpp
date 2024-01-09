@@ -1,12 +1,12 @@
 #include <Arduino.h>
-#include <TFT_eSPI.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "VideoPlayer.h"
-#include "audio_output/AudioOutput.h"
+#include "AudioOutput/AudioOutput.h"
 #include "ChannelData/ChannelData.h"
 #include "VideoSource/VideoSource.h"
 #include "AudioSource/AudioSource.h"
+#include "Displays/Display.h"
 #include <list>
 
 void VideoPlayer::_framePlayerTask(void *param)
@@ -21,7 +21,7 @@ void VideoPlayer::_audioPlayerTask(void *param)
   player->audioPlayerTask();
 }
 
-VideoPlayer::VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, TFT_eSPI &display, AudioOutput *audioOutput)
+VideoPlayer::VideoPlayer(ChannelData *channelData, VideoSource *videoSource, AudioSource *audioSource, Display &display, AudioOutput *audioOutput)
 : mChannelData(channelData), mVideoSource(videoSource), mAudioSource(audioSource), mDisplay(display), mState(VideoPlayerState::STOPPED), mAudioOutput(audioOutput)
 {
 }
@@ -72,7 +72,7 @@ void VideoPlayer::stop()
   mState = VideoPlayerState::STOPPED;
   mVideoSource->setState(VideoPlayerState::STOPPED);
   mCurrentAudioSample = 0;
-  mDisplay.fillScreen(TFT_BLACK);
+  mDisplay.fillScreen(DisplayColors::BLACK);
 }
 
 void VideoPlayer::pause()
@@ -102,23 +102,7 @@ int dmaBufferIndex = 0;
 int _doDraw(JPEGDRAW *pDraw)
 {
   VideoPlayer *player = (VideoPlayer *)pDraw->pUser;
-  int numPixels = pDraw->iWidth * pDraw->iHeight;
-  if (dmaBuffer[dmaBufferIndex] == NULL)
-  {
-    dmaBuffer[dmaBufferIndex] = (uint16_t *)malloc(numPixels * 2);
-  }
-  memcpy(dmaBuffer[dmaBufferIndex], pDraw->pPixels, numPixels * 2);
-  TFT_eSPI &tft = player->mDisplay;
-  #ifdef USE_DMA
-  tft.dmaWait();
-  #endif
-  tft.setAddrWindow(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight);
-  #ifdef USE_DMA
-  tft.pushPixelsDMA(dmaBuffer[dmaBufferIndex], numPixels);
-  #else
-  tft.pushPixels(dmaBuffer[dmaBufferIndex], numPixels);
-  #endif
-  dmaBufferIndex = (dmaBufferIndex + 1) % 2;
+  player->mDisplay.drawPixels(pDraw->x, pDraw->y, pDraw->iWidth, pDraw->iHeight, pDraw->pPixels);
   return 1;
 }
 
@@ -160,6 +144,7 @@ void VideoPlayer::framePlayerTask()
       {
         staticBuffer = (uint16_t *)malloc(width * height * 2);
       }
+      mDisplay.startWrite();
       for (int i = 0; i < mDisplay.height(); i++)
       {
         for (int p = 0; p < width * height; p++)
@@ -167,18 +152,9 @@ void VideoPlayer::framePlayerTask()
           int grey = xorshift16() >> 8;
           staticBuffer[p] = mDisplay.color565(grey, grey, grey);
         }
-        mDisplay.startWrite();
-        #ifdef USE_DMA
-        mDisplay.dmaWait();
-        #endif
-        mDisplay.setAddrWindow(0, i * height, width, height);
-        #ifdef USE_DMA
-        mDisplay.pushPixelsDMA(staticBuffer, width * height);
-        #else
-        mDisplay.pushPixels(staticBuffer, width * height);
-        #endif
-        mDisplay.endWrite();
+        mDisplay.drawPixels(0, i * height, width, height, staticBuffer);
       }
+      mDisplay.endWrite();
       vTaskDelay(50 / portTICK_PERIOD_MS);
       continue;
     }
@@ -198,21 +174,20 @@ void VideoPlayer::framePlayerTask()
     if (mJpeg.openRAM(jpegBuffer, jpegLength, _doDraw))
     {
       mJpeg.setUserPointer(this);
+      #ifdef LED_MATRIX
+      mJpeg.setPixelType(RGB565_LITTLE_ENDIAN);
+      #else
       mJpeg.setPixelType(RGB565_BIG_ENDIAN);
+      #endif
       mJpeg.decode(0, 0, 0);
       mJpeg.close();
     }
     // show channel indicator 
     if (millis() - mChannelVisible < 2000) {
-      mDisplay.setCursor(20, 20);
-      mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
-      mDisplay.printf("%d", mChannelData->getChannelNumber());
+      mDisplay.drawChannel(mChannelData->getChannelNumber());
     }
     #if CORE_DEBUG_LEVEL > 0
-    // show the frame rate in the top right
-    mDisplay.setCursor(mDisplay.width() - 50, 20);
-    mDisplay.setTextColor(TFT_GREEN, TFT_BLACK);
-    mDisplay.printf("%d", frameTimes.size() / 5);
+    mDisplay.drawFPS(frameTimes.size() / 5);
     #endif
     mDisplay.endWrite();
   }

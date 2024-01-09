@@ -1,3 +1,5 @@
+#ifdef M5CORE2
+
 #include "M5Touch.h"
 // M5Touch class
 
@@ -167,3 +169,5 @@ bool HotZone::inHotZoneDoFun(Point& p) {
     return false;
   }
 }
+
+#endif

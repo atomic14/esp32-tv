@@ -1,3 +1,5 @@
+#ifdef M5CORE2
+
 #include "M5PointAndZone.h"
 
 // Point class
@@ -179,3 +181,5 @@ void Zone::rotate(uint8_t m) {
   }
   if (!(m % 2)) std::swap(w, h);
 }
+
+#endif /* M5CORE2 */

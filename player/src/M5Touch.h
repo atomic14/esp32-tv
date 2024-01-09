@@ -1,3 +1,4 @@
+#ifdef M5CORE2
 /*
 
 == M5Touch - The M5Stack Core2 Touch Library ==
@@ -283,3 +284,5 @@ class HotZone : public Zone {
 #define TouchPoint_t Point
 
 #endif /* _M5TOUCH_H_ */
+
+#endif
