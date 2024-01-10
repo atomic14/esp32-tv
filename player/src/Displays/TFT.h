@@ -6,11 +6,11 @@ class TFT_eSPI;
 
 class TFT: public Display {
 private:
-  TFT_eSPI &tft;
+  TFT_eSPI *tft;
   uint16_t *dmaBuffer[2] = {NULL, NULL};
   int dmaBufferIndex = 0;
 public:
-  TFT(TFT_eSPI &tft);
+  TFT();
   void drawPixels(int x, int y, int width, int height, uint16_t *pixels);
   void startWrite();
   void endWrite();

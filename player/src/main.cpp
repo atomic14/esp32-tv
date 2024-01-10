@@ -45,8 +45,7 @@ ChannelData *channelData = NULL;
 #ifdef LED_MATRIX
 Matrix display;
 #else
-TFT_eSPI tft = TFT_eSPI();
-TFT display(tft);
+TFT display;
 #endif
 
 void setup()
