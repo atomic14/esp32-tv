@@ -198,9 +198,7 @@ void loop()
     {
     case RemoteCommands::POWER:
       videoPlayer->stop();
-      tft.setCursor(20, 20);
-      tft.setTextColor(TFT_GREEN, TFT_BLACK);
-      tft.println("TUNING...");
+      display.drawTuningText();
       Serial.println("POWER");
       // get the channel info
       while(!channelData->fetchChannelData()) {
