@@ -51,10 +51,6 @@ TFT display;
 void setup()
 {
   Serial.begin(115200);
-  for(int i = 0; i<10; i++) {
-    Serial.println(".");
-    delay(500);
-  }
   Serial.printf("Total heap: %d\n", ESP.getHeapSize());
   Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
   Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
@@ -197,6 +193,12 @@ void loop()
     switch (command)
     {
     case RemoteCommands::POWER:
+      // log out RAM usage
+      Serial.printf("Total heap: %d\n", ESP.getHeapSize());
+      Serial.printf("Free heap: %d\n", ESP.getFreeHeap());
+      Serial.printf("Total PSRAM: %d\n", ESP.getPsramSize());
+      Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
+
       videoPlayer->stop();
       display.drawTuningText();
       Serial.println("POWER");

@@ -1,5 +1,3 @@
-#pragma once
-
 #ifdef LED_MATRIX
 
 #include <Arduino.h>

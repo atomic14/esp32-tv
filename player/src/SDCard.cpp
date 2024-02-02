@@ -161,7 +161,7 @@ std::vector<std::string> SDCard::listFiles(const char *folder, const char *exten
     bool isVisible = filename[0] != '.';
     bool isMatchingExtension = extension == NULL || filename.find(extension) == filename.length() - strlen(extension);
     if (isFile && isVisible && isMatchingExtension) {
-      files.push_back("/sdcard/" + filename);
+            files.push_back("/sdcard/" + filename);
     }
   }
   // sort the files alphabetically
