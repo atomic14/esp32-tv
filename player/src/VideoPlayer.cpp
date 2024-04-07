@@ -210,9 +210,9 @@ void VideoPlayer::audioPlayerTask()
     // have we reached the end of the channel?
     if (audioLength == 0) {
       // we want to loop the video so reset the channel data and start again
-      mChannelData->setChannel(mChannelData->getChannelNumber());
-      mCurrentAudioSample = 0;
-      mVideoSource->updateAudioTime(0);
+      stop();
+      setChannel(mChannelData->getChannelNumber());
+      play();
       continue;
     }
     if (audioLength > 0) {
