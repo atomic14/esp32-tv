@@ -52,6 +52,14 @@ void Matrix::drawTuningText() {
   dma_display->println("TUNING...");
 }
 
+void Matrix::drawSDCardFailed() {
+  // fill the screen with red
+  dma_display->fillScreen(0xf800);
+  dma_display->setCursor(20, 20);
+  dma_display->setTextColor(0xffff, 0x0000);
+  dma_display->println("SD Card Failed");
+}
+
 void Matrix::drawFPS(int fps) {
   // show the frame rate in the top right
   dma_display->setCursor(width() - 50, 20);

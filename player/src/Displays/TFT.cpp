@@ -80,6 +80,14 @@ void TFT::drawTuningText() {
   tft->println("TUNING...");
 }
 
+void TFT::drawSDCardFailed() {
+  tft->fillScreen(TFT_RED);
+  tft->setCursor(0, 20);
+  tft->setTextColor(TFT_WHITE);
+  tft->setTextSize(2);
+  tft->println("Failed to mount SD Card");
+}
+
 void TFT::drawFPS(int fps) {
     // show the frame rate in the top right
     tft->setCursor(width() - 50, 20);
