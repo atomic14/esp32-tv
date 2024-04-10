@@ -20,5 +20,6 @@ public:
   void drawChannel(int channelIndex);
   void drawTuningText();
   void drawFPS(int fps);
+  void drawSDCardFailed();
 };
 #endif
