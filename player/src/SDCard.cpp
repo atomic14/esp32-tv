@@ -64,6 +64,7 @@ SDCard::SDCard(gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpi
   Serial.printf("SDCard mounted at: %s\n", MOUNT_POINT);
   // Card has been initialized, print its properties
   sdmmc_card_print_info(stdout, m_card);
+  sd_card_init_success = true;
   #endif
 }
 
@@ -123,6 +124,7 @@ SDCard::SDCard(gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs)
   Serial.printf("SDCard mounted at: %s\n", MOUNT_POINT);
   // Card has been initialized, print its properties
   sdmmc_card_print_info(stdout, m_card);
+  sd_card_init_success = true;
 }
 
 SDCard::~SDCard()
@@ -135,7 +137,10 @@ SDCard::~SDCard()
 
 
 bool SDCard::isMounted() {
-  return sdmmc_get_status(m_card) == ESP_OK;
+  if (sd_card_init_success) {
+    return sdmmc_get_status(m_card) == ESP_OK;
+  }
+  return false;
 }
 
 std::vector<std::string> SDCard::listFiles(const char *folder, const char *extension)
