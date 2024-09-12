@@ -70,7 +70,7 @@ SDCard::SDCard(gpio_num_t clk, gpio_num_t cmd, gpio_num_t d0, gpio_num_t d1, gpi
 
 SDCard::SDCard(gpio_num_t miso, gpio_num_t mosi, gpio_num_t clk, gpio_num_t cs)
 {
-  m_host.max_freq_khz = SDMMC_FREQ_52M;
+  m_host.max_freq_khz = SDMMC_FREQ_DEFAULT; // A faster speed can be used if your card supports it
   esp_err_t ret;
   // Options for mounting the filesystem.
   // If format_if_mount_failed is set to true, SD card will be partitioned and
