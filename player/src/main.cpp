@@ -7,6 +7,7 @@
 #include "AudioOutput/I2SOutput.h"
 #include "AudioOutput/DACOutput.h"
 #include "AudioOutput/PDMTimerOutput.h"
+#include "AudioOutput/PWMTimerOutput.h"
 #include "AudioOutput/PDMOutput.h"
 #include "ChannelData/NetworkChannelData.h"
 #include "ChannelData/SDCardChannelData.h"
@@ -18,6 +19,8 @@
 #include "SDCard.h"
 #include "PowerUtils.h"
 #include "Button.h"
+#include <Wire.h>
+#include "Touch/cst816T.h"
 
 const char *WIFI_SSID = "CMGResearch";
 const char *WIFI_PASSWORD = "02087552867";
@@ -48,6 +51,9 @@ Matrix display;
 TFT display;
 #endif
 
+TwoWire wire2(0);
+cst816t *touch;
+
 void setup()
 {
   Serial.begin(115200);
@@ -57,6 +63,19 @@ void setup()
   Serial.printf("Free PSRAM: %d\n", ESP.getFreePsram());
   powerInit();
   buttonInit();
+
+  // wire2.setPins(38, 48);
+  // touch = new cst816t(wire2, 43);
+  // touch->begin();
+  // xTaskCreate([](void *pvParameters) {
+  //   while (1)
+  //   {
+  //     if (touch->available()) {
+  //       Serial.printf("%d, %s\n", touch->gesture_id, touch->state().c_str());
+  //     }
+  //     vTaskDelay(100);
+  //   }
+  // }, "touch", 4096, NULL, 1, NULL);
   #ifdef USE_SDCARD
   Serial.println("Using SD Card");
   // power on the SD card
@@ -109,13 +128,17 @@ void setup()
   audioOutput->start(16000);
 #endif
 #ifdef PDM_GPIO_NUM
-  // i2s speaker pins
+  i2s speaker pins
   i2s_pin_config_t i2s_speaker_pins = {
       .bck_io_num = I2S_PIN_NO_CHANGE,
       .ws_io_num = GPIO_NUM_0,
       .data_out_num = PDM_GPIO_NUM,
       .data_in_num = I2S_PIN_NO_CHANGE};
   audioOutput = new PDMOutput(I2S_NUM_0, i2s_speaker_pins);
+  audioOutput->start(16000);
+#endif
+#ifdef PWM_GPIO_NUM
+  audioOutput = new PWMTimerOutput(PWM_GPIO_NUM);
   audioOutput->start(16000);
 #endif
 #ifdef I2S_SPEAKER_SERIAL_CLOCK
@@ -150,6 +173,7 @@ void setup()
   }
   // default to first channel
   videoPlayer->setChannel(0);
+  delay(500);
   videoPlayer->play();
 #endif
   #ifdef M5CORE2

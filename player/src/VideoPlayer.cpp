@@ -38,8 +38,8 @@ void VideoPlayer::start()
       this,
       1,
       NULL,
-      1);
-  xTaskCreatePinnedToCore(_audioPlayerTask, "audio_loop", 10000, this, 1, NULL, 1);
+      0);
+  xTaskCreatePinnedToCore(_audioPlayerTask, "audio_loop", 10000, this, 1, NULL, 0);
 }
 
 void VideoPlayer::setChannel(int channel)

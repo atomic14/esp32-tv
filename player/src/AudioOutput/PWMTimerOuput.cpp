@@ -1,13 +1,13 @@
-#include "PDMTimerOutput.h"
+#include "PWMTimerOutput.h"
 #include "freertos/semphr.h"
 #include "driver/sigmadelta.h"
 #include <string.h>
 #include <Arduino.h>
 
 
-IRAM_ATTR void onTimerCallback(void *param)
+IRAM_ATTR void onTimerCallbackPWM(void *param)
 {
-  PDMTimerOutput *output = (PDMTimerOutput *)param;
+  PWMTimerOutput *output = (PWMTimerOutput *)param;
   timer_spinlock_take(TIMER_GROUP_0);
   timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
   timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
@@ -15,28 +15,12 @@ IRAM_ATTR void onTimerCallback(void *param)
   output->onTimer();
 }
 
-void PDMTimerOutput::start(uint32_t sample_rate)
+void PWMTimerOutput::start(uint32_t sample_rate)
 {
   mSampleRate = sample_rate;
 
-  sigmadelta_config_t config;
-  config.channel = SIGMADELTA_CHANNEL_0;
-  config.sigmadelta_duty = 0;
-  config.sigmadelta_prescale = 255;
-  config.sigmadelta_gpio = mPDMPin;
-
-  // configure the PDM
-  esp_err_t result = sigmadelta_config(&config);
-  if (result != ESP_OK)
-  {
-    Serial.printf("Error initializing PDM: %d\n", result);
-  }
-  // result = sigmdelta_begin(SIGMADELTA_CHANNEL_0);
-  // if (result != ESP_OK)
-  // {
-  //   Serial.printf("Error beginning PDM: %d\n", result);
-  // }
-  // pinMode(18, OUTPUT);
+  ledcSetup(0, 50000, 8);
+  ledcAttachPin(mPDMPin, 0);
 
   // create a timer that will fire at the sample rate
   timer_config_t timer_config = {
@@ -46,7 +30,7 @@ void PDMTimerOutput::start(uint32_t sample_rate)
       .counter_dir = TIMER_COUNT_UP,
       .auto_reload = TIMER_AUTORELOAD_EN,
       .divider = 80};
-  result = timer_init(TIMER_GROUP_0, TIMER_0, &timer_config);
+  esp_err_t result = timer_init(TIMER_GROUP_0, TIMER_0, &timer_config);
   if (result != ESP_OK)
   {
     Serial.printf("Error initializing timer: %d\n", result);
@@ -67,7 +51,7 @@ void PDMTimerOutput::start(uint32_t sample_rate)
   {
     Serial.printf("Error enabling timer interrupt: %d\n", result);
   }
-  result = timer_isr_register(TIMER_GROUP_0, TIMER_0, &onTimerCallback, this, ESP_INTR_FLAG_IRAM, NULL);
+  result = timer_isr_register(TIMER_GROUP_0, TIMER_0, &onTimerCallbackPWM, this, ESP_INTR_FLAG_IRAM, NULL);
   if (result != ESP_OK)
   {
     Serial.printf("Error registering timer interrupt: %d\n", result);
@@ -83,7 +67,7 @@ void PDMTimerOutput::start(uint32_t sample_rate)
   Serial.println("PDM Started");
 }
 
-void PDMTimerOutput::write(int8_t *samples, int count)
+void PWMTimerOutput::write(int8_t *samples, int count)
 {
   // Serial.printf("Count %d\n", mCount);
   while (true)
@@ -110,7 +94,7 @@ void PDMTimerOutput::write(int8_t *samples, int count)
   }
 }
 
-void PDMTimerOutput::onTimer()
+void PWMTimerOutput::onTimer()
 {
   // output a sample from the buffer if we have one
   if (mCurrentIndex < mBufferLength)
@@ -119,15 +103,7 @@ void PDMTimerOutput::onTimer()
     // get the first sample from the buffer
     int16_t sample = mBuffer[mCurrentIndex];
     mCurrentIndex++;
-    // sample *= 2;
-    if (sample > 90) {
-      sample = 90;
-    }
-    if (sample < -90) {
-      sample = -90;
-    }
-    // write the sample to the PDM
-    sigmadelta_set_duty(SIGMADELTA_CHANNEL_0, sample);
+    ledcWrite(0, sample+128);
   }
   if(mCurrentIndex >= mBufferLength)
   {
