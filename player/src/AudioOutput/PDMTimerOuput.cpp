@@ -96,7 +96,9 @@ void PDMTimerOutput::write(int8_t *samples, int count)
         // make sure there's enough room for the samples
         mSecondBuffer = (int8_t *)realloc(mSecondBuffer, count);
         // copy them into the second buffer
-        memcpy(mSecondBuffer, samples, count);
+        for(int i = 0; i < count; i++) {
+          mSecondBuffer[i] = samples[i] * mVolume / 10;
+        }
         // second buffer is now full of samples
         mSecondBufferLength = count;
         // unlock the mutext and return
