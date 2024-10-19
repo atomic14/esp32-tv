@@ -11,14 +11,14 @@ NetworkAudioSource::NetworkAudioSource(NetworkChannelData *channelData): mChanne
 {
 }
 
-int NetworkAudioSource::getAudioSamples(int8_t **buffer, size_t &bufferSize, int currentAudioSample)
+int NetworkAudioSource::getAudioSamples(uint8_t **buffer, size_t &bufferSize, int currentAudioSample)
 {
   if (WiFi.status() == WL_CONNECTED)
   {
     // resize the buffer if needed
     if (bufferSize < SAMPLES_PER_CHUNK)
     {
-      *buffer = (int8_t *)realloc(*buffer, SAMPLES_PER_CHUNK);
+      *buffer = (uint8_t *)realloc(*buffer, SAMPLES_PER_CHUNK);
       bufferSize = SAMPLES_PER_CHUNK;
     }
     std::string url = mChannelData->getAudioURL() + "/" + std::to_string(currentAudioSample) + "/" + std::to_string(bufferSize);

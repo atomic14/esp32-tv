@@ -196,7 +196,7 @@ void VideoPlayer::framePlayerTask()
 void VideoPlayer::audioPlayerTask()
 {
   size_t bufferLength = 16000;
-  int8_t *audioData = (int8_t *)malloc(16000);
+  uint8_t *audioData = (uint8_t *)malloc(16000);
   while (true)
   {
     if (mState != VideoPlayerState::PLAYING)

@@ -31,7 +31,7 @@ public:
     mBufferSemaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(mBufferSemaphore);
   }
-  void write(int8_t *samples, int count);
+  void write(uint8_t *samples, int count);
   void start(uint32_t sample_rate);
   void stop() {}
 

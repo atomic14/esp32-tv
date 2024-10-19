@@ -17,10 +17,10 @@ private:
   gpio_num_t mPDMPin;
   uint32_t mSampleRate;
   SemaphoreHandle_t mBufferSemaphore;
-  int8_t *mBuffer=NULL;;
+  uint8_t *mBuffer=NULL;;
   int mCurrentIndex=0;
   int mBufferLength=0;
-  int8_t *mSecondBuffer=NULL;;
+  uint8_t *mSecondBuffer=NULL;;
   int mSecondBufferLength=0;
   int mCount = 0;
   void onTimer();
@@ -31,7 +31,7 @@ public:
     mBufferSemaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(mBufferSemaphore);
   }
-  void write(int8_t *samples, int count);
+  void write(uint8_t *samples, int count);
   void start(uint32_t sample_rate);
   void stop() {}
 

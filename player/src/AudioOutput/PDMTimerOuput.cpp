@@ -83,7 +83,7 @@ void PDMTimerOutput::start(uint32_t sample_rate)
   Serial.println("PDM Started");
 }
 
-void PDMTimerOutput::write(int8_t *samples, int count)
+void PDMTimerOutput::write(uint8_t *samples, int count)
 {
   // Serial.printf("Count %d\n", mCount);
   while (true)
@@ -97,7 +97,7 @@ void PDMTimerOutput::write(int8_t *samples, int count)
         mSecondBuffer = (int8_t *)realloc(mSecondBuffer, count);
         // copy them into the second buffer
         for(int i = 0; i < count; i++) {
-          mSecondBuffer[i] = samples[i] * mVolume / 10;
+          mSecondBuffer[i] = (samples[i] - 128) * mVolume / 10;
         }
         // second buffer is now full of samples
         mSecondBufferLength = count;

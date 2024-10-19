@@ -16,7 +16,7 @@ protected:
 public:
   I2SBase(i2s_port_t i2s_port);
   void stop();
-  void write(int8_t *samples, int count);
+  void write(uint8_t *samples, int count);
   // override this in derived classes to turn the sample into
   // something the output device expects - for the default case
   // this is simply a pass through

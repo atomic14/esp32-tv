@@ -1,5 +1,13 @@
 {
   "files.associations": {
-    "functional": "cpp"
+    "functional": "cpp",
+    "*.tcc": "cpp",
+    "exception": "cpp",
+    "fstream": "cpp",
+    "iosfwd": "cpp",
+    "new": "cpp",
+    "ostream": "cpp",
+    "sstream": "cpp",
+    "streambuf": "cpp"
   }
 }

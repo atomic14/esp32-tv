@@ -9,16 +9,12 @@ SDCardAudioSource::SDCardAudioSource(SDCardChannelData *channelData): mChannelDa
 {
 }
 
-int SDCardAudioSource::getAudioSamples(int8_t **buffer, size_t &bufferSize, int currentAudioSample)
+int SDCardAudioSource::getAudioSamples(uint8_t **buffer, size_t &bufferSize, int currentAudioSample)
 {
   // read the audio data into the buffer
   AVIParser *parser = mChannelData->getAudioParser();
   if (parser) {
     int audioLength = parser->getNextChunk((uint8_t **) buffer, bufferSize);
-    // conver the audio from unsigned to signed
-    for (int i = 0; i < audioLength; i++) {
-      (*buffer)[i] = ((uint8_t)(*buffer)[i]) - 128;
-    }
     return audioLength;
   }
   return 0;

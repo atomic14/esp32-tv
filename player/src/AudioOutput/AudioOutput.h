@@ -18,7 +18,7 @@ public:
   // something the output device expects - for the default case
   // this is simply a pass through
   virtual int16_t process_sample(int16_t sample) { return sample; }
-  virtual void write(int8_t *samples, int count) = 0;
+  virtual void write(uint8_t *samples, int count) = 0;
 
   void setVolume(int volume){
     if (volume > 10 || volume < 0) mVolume = 10;

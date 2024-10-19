@@ -19,8 +19,8 @@ void PWMTimerOutput::start(uint32_t sample_rate)
 {
   mSampleRate = sample_rate;
 
-  ledcSetup(0, 50000, 8);
-  ledcAttachPin(mPDMPin, 0);
+  ledcSetup(2, 32000, 11);
+  ledcAttachPin(mPDMPin, 2);
 
   // create a timer that will fire at the sample rate
   timer_config_t timer_config = {
@@ -67,7 +67,7 @@ void PWMTimerOutput::start(uint32_t sample_rate)
   Serial.println("PDM Started");
 }
 
-void PWMTimerOutput::write(int8_t *samples, int count)
+void PWMTimerOutput::write(uint8_t *samples, int count)
 {
   // Serial.printf("Count %d\n", mCount);
   while (true)
@@ -78,10 +78,10 @@ void PWMTimerOutput::write(int8_t *samples, int count)
       {
         //Serial.println("Filling second buffer");
         // make sure there's enough room for the samples
-        mSecondBuffer = (int8_t *)realloc(mSecondBuffer, count);
+        mSecondBuffer = (uint8_t *)realloc(mSecondBuffer, count);
         // copy them into the second buffer
         for(int i = 0; i < count; i++) {
-          mSecondBuffer[i] = samples[i] * mVolume / 10;
+          mSecondBuffer[i] = samples[i];
         }
         // second buffer is now full of samples
         mSecondBufferLength = count;
@@ -103,9 +103,9 @@ void PWMTimerOutput::onTimer()
   {
     mCount++;
     // get the first sample from the buffer
-    int16_t sample = mBuffer[mCurrentIndex];
+    uint32_t sample = (uint32_t(mBuffer[mCurrentIndex]) << 3);
     mCurrentIndex++;
-    ledcWrite(0, sample+128);
+    ledcWrite(2, sample * mVolume / 10);
   }
   if(mCurrentIndex >= mBufferLength)
   {
@@ -115,7 +115,7 @@ void PWMTimerOutput::onTimer()
     {
       if (mSecondBufferLength > 0) {
         // swap the buffers
-        int8_t *tmp = mBuffer;
+        uint8_t *tmp = mBuffer;
         mBuffer = mSecondBuffer;
         mBufferLength = mSecondBufferLength;
         mSecondBuffer = tmp;

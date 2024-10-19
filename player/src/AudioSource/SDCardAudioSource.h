@@ -14,5 +14,5 @@ private:
 
 public:
   SDCardAudioSource(SDCardChannelData *channelData);
-  int getAudioSamples(int8_t **buffer, size_t &bufferSize, int currentAudioSample);
+  int getAudioSamples(uint8_t **buffer, size_t &bufferSize, int currentAudioSample);
 };
